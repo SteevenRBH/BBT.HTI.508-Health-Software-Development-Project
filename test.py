@@ -1,2 +1,2 @@
 print("Hello world!")
-print("It works!")
+print("It works! -KATA")
