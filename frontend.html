@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Patient Cholesterol and Glucose Visualization</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <div class="container">
+    <h1>Patient Cholesterol and Glucose Visualization</h1>
+
+    <!-- Patient ID Input Form -->
+    <div class="form-container">
+      <label for="patientId">Enter Patient ID:</label>
+      <input type="text" id="patientId" placeholder="e.g., patient123">
+      <button onclick="fetchPatientData()">Fetch Data</button>
+    </div>
+
+    <!-- Cholesterol and Glucose Visualization -->
+    <div class="charts-container">
+      <canvas id="cholesterolChart" width="400" height="200"></canvas>
+      <canvas id="glucoseChart" width="400" height="200"></canvas>
+    </div>
+
+    <!-- Error Message -->
+    <div id="error-message" style="display: none; color: red;">
+      Patient not found or does not have Hyperlipidemia.
+    </div>
+  </div>
+
+  <script>
+    // Function to fetch patient data based on Patient ID
+    async function fetchPatientData() {
+      const patientId = document.getElementById('patientId').value.trim();
+      const errorMessage = document.getElementById('error-message');
+
+      // Clear any previous data or charts
+      errorMessage.style.display = 'none';
+      document.getElementById('cholesterolChart').style.display = 'none';
+      document.getElementById('glucoseChart').style.display = 'none';
+
+      // Fetch patient data from backend
+      try {
+        const response = await fetch(`http://127.0.0.1:5000/api/patient/${patientId}`);
+        const data = await response.json();
+
+        // If no data or error in response
+        if (response.status !== 200 || !data.cholesterol_measurements || !data.glucose_measurements) {
+          errorMessage.style.display = 'block';
+          return;
+        }
+
+        // Prepare data for charts
+        const cholesterolData = data.cholesterol_measurements.map(item => ({
+          date: item.date,
+          value: item.value
+        }));
+
+        const glucoseData = data.glucose_measurements.map(item => ({
+          date: item.date,
+          value: item.value
+        }));
+
+        // Display charts
+        displayChart('cholesterolChart', cholesterolData, 'Cholesterol Levels (mg/dL)', 'Date', 'Cholesterol');
+        displayChart('glucoseChart', glucoseData, 'Glucose Levels (mg/dL)', 'Date', 'Glucose');
+
+      } catch (error) {
+        errorMessage.style.display = 'block';
+      }
+    }
+
+    // Function to display chart with given data
+    function displayChart(chartId, data, title, xLabel, yLabel) {
+      const ctx = document.getElementById(chartId).getContext('2d');
+      const labels = data.map(item => new Date(item.date).toLocaleDateString());
+      const values = data.map(item => item.value);
+
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: title,
+            data: values,
+            fill: false,
+            borderColor: 'rgb(75, 192, 192)',
+            tension: 0.1
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            x: {
+              title: { display: true, text: xLabel }
+            },
+            y: {
+              title: { display: true, text: yLabel }
+            }
+          }
+        }
+      });
+
+      document.getElementById(chartId).style.display = 'block';
+    }
+  </script>
+</body>
+</html>
