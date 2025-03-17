@@ -86,63 +86,79 @@
         </div>
     </div>
 
-    <script>
-        async function fetchPatientData() {
-            const patientId = document.getElementById('patientId').value.trim();
-            const errorMessage = document.getElementById('error-message');
-            const medicationList = document.getElementById('medicationList');
-            errorMessage.style.display = 'none';
-            medicationList.innerHTML = '';
+<script>
+    let cholesterolChart = null;
+    let glucoseChart = null;
 
-            try {
-                const response = await fetch(`http://127.0.0.1:5000/api/patient/${patientId}`);
-                const data = await response.json();
+    async function fetchPatientData() {
+        const patientId = document.getElementById('patientId').value.trim();
+        const errorMessage = document.getElementById('error-message');
+        const medicationList = document.getElementById('medicationList');
 
-                if (response.status !== 200 || !data.cholesterol_measurements || !data.glucose_measurements) {
-                    errorMessage.style.display = 'block';
-                    return;
-                }
+        // Piilotetaan virheilmoitus ja tyhjennetään aiemmat lääkkeet
+        errorMessage.style.display = 'none';
+        medicationList.innerHTML = '';
 
-                displayChart('cholesterolChart', data.cholesterol_measurements, 'Cholesterol Levels', 'Date', 'mg/dL');
-                displayChart('glucoseChart', data.glucose_measurements, 'Glucose Levels', 'Date', 'mg/dL');
+        // Poistetaan vanhat kaaviot, jos ne on jo olemassa
+        if (cholesterolChart) {
+            cholesterolChart.destroy();
+            cholesterolChart = null;
+        }
+        if (glucoseChart) {
+            glucoseChart.destroy();
+            glucoseChart = null;
+        }
 
-                data.medication_dispenses.forEach(med => {
-                    const li = document.createElement('li');
-                    li.textContent = `${new Date(med.date).toLocaleDateString()}: ${med.medication}`;
-                    medicationList.appendChild(li);
-                });
-            } catch (error) {
+        try {
+            const response = await fetch(`http://127.0.0.1:5000/api/patient/${patientId}`);
+            const data = await response.json();
+
+            if (response.status !== 200 || !data.cholesterol_measurements || !data.glucose_measurements) {
                 errorMessage.style.display = 'block';
+                return;
             }
-        }
 
-        function displayChart(chartId, measurements, title, xLabel, yLabel) {
-            const ctx = document.getElementById(chartId).getContext('2d');
-            const labels = measurements.map(item => new Date(item.date).toLocaleDateString());
-            const values = measurements.map(item => item.value);
+            cholesterolChart = displayChart('cholesterolChart', data.cholesterol_measurements, 'Cholesterol Levels', 'Date', 'mg/dL');
+            glucoseChart = displayChart('glucoseChart', data.glucose_measurements, 'Glucose Levels', 'Date', 'mg/dL');
 
-            new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: title,
-                        data: values,
-                        borderColor: 'rgba(75, 192, 192, 1)',
-                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                        fill: true,
-                        tension: 0.1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    scales: {
-                        x: { title: { display: true, text: xLabel } },
-                        y: { title: { display: true, text: yLabel } }
-                    }
-                }
+            data.medication_dispenses.forEach(med => {
+                const li = document.createElement('li');
+                li.textContent = `${new Date(med.date).toLocaleDateString()}: ${med.medication}`;
+                medicationList.appendChild(li);
             });
+        } catch (error) {
+            errorMessage.style.display = 'block';
         }
-    </script>
+    }
+
+    function displayChart(chartId, measurements, title, xLabel, yLabel) {
+        const ctx = document.getElementById(chartId).getContext('2d');
+        const labels = measurements.map(item => new Date(item.date).toLocaleDateString());
+        const values = measurements.map(item => item.value);
+
+        return new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: title,
+                    data: values,
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    fill: true,
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    x: { title: { display: true, text: xLabel } },
+                    y: { title: { display: true, text: yLabel } }
+                }
+            }
+        });
+    }
+</script>
+
 </body>
 </html>

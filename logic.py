@@ -70,7 +70,10 @@ hyperlip_med_codes = {"312961", "198211", "262095", "543354", "617318", "859749"
 
 # Get patient details by ID
 def get_patient_data(patient_id):
-    """Retrieve cholesterol, glucose, and medication dispense data for a given patient ID."""
+    """Lataa potilastiedot suoraan JSON-databasesta ja palauta tiedot."""
+    data = load_patient_data()  # Lataa data jokaisen haun yhteydessä
+    _, patient_resources_map = get_hyperlipidemia_patients()  # Rakenna potilaskartta uudelleen
+
     if patient_id not in patient_resources_map:
         return None
 
@@ -84,7 +87,7 @@ def get_patient_data(patient_id):
         res = entry.get("resource", {})
         rtype = res.get("resourceType")
 
-        # Process Observation resources
+        # Prosessoidaan Observation-datat
         if rtype == "Observation":
             code = res.get("code", {})
             code_text = code.get("text", "")
@@ -103,7 +106,7 @@ def get_patient_data(patient_id):
             elif code_text in glucose_codes:
                 glucose_table.append({"date": date_obj, "code": code_text, "value": value, "unit": unit})
 
-        # Process MedicationDispense/Administration events
+        # Prosessoidaan MedicationDispense-tiedot
         elif rtype in ["MedicationDispense", "MedicationAdministration"]:
             med_concept = res.get("medicationCodeableConcept", {})
             med_text = med_concept.get("text", "")
@@ -122,3 +125,4 @@ def get_patient_data(patient_id):
         "glucose_measurements": glucose_table,
         "medication_dispenses": medication_dispense_table
     }
+
