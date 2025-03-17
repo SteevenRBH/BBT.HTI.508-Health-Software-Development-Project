@@ -7,54 +7,64 @@ app = Flask(__name__)
 JSON_DATABASE = 'json_database.json'
 
 with open(JSON_DATABASE, 'r', encoding='utf-8') as f:
-    data = json.load(f)
-
+    fhir_data = json.load(f)
 
 #  Determine if patient has Hyperlipidemia
+def has_hyperlipidemia(fhir_data, patient_id):
+    """
+    Check if a patient has hyperlipidemia based on their Condition resources.
 
-def has_hyperlipidemia(resources):
-    for entry in resources:
-        res = entry.get("resource", {})
-        if res.get("resourceType") == "Condition":
-            code = res.get("code", {})
-            if code.get("text") and "hyperlip" in code.get("text").lower():
-                return True
-            for coding in code.get("coding", []):
-                if "hyperlip" in coding.get("display", "").lower():
-                    return True
+    :param fhir_data: List containing FHIR JSON database (list of patient resource lists).
+    :param patient_id: ID of the patient to check.
+    :return: True if the patient has hyperlipidemia, False otherwise.
+    """
+    hyperlipidemia_codes = {"E78", "E78.0", "E78.1", "E78.2", "E78.3", "E78.4",
+                            "E78.5", "E78.6", "E78.7", "E78.8", "E78.9",
+                            "55822004"}  # Both ICD-10 and SNOMED codes
+
+    for patient_resources in fhir_data:
+        for entry in patient_resources:
+            resource = entry.get("resource", {})
+            if resource.get("resourceType") == "Condition" and resource.get("patient", {}).get(
+                    "reference") == f"Patient/{patient_id}":
+                coding_list = resource.get("code", {}).get("coding", [])
+                if isinstance(coding_list, list):
+                    for coding in coding_list:
+                        if isinstance(coding, dict) and (
+                                coding.get("code") in hyperlipidemia_codes or
+                                "hyperlipidemia" in coding.get("display", "").lower()):
+                            return True
     return False
 
-
-# Build a list of patients with Hyperlipidemia
-hyperlip_patients = []
+# Build a dictionary mapping patient ID to resources
 patient_resources_map = {}
 
-for resources in data:
-    if not resources:
-        continue
-    patient_res = resources[0].get("resource", {})
-    if patient_res.get("resourceType") != "Patient":
-        continue
-    patient_id = patient_res.get("id")
-    if has_hyperlipidemia(resources):
-        # Get patient name
-        full_name = "Unknown"
-        if "name" in patient_res and patient_res["name"]:
-            name_entry = patient_res["name"][0]
-            given = " ".join(name_entry.get("given", []))
-            family = " ".join(name_entry.get("family", []))
-            full_name = f"{given} {family}"
-        hyperlip_patients.append((patient_id, full_name))
-        patient_resources_map[patient_id] = resources
+for patient_resources in fhir_data:
+    for entry in patient_resources:
+        resource = entry.get("resource", {})
+        if resource.get("resourceType") == "Patient":
+            patient_id = resource.get("id", "")
+            if patient_id:
+                patient_resources_map[patient_id] = patient_resources
 
+# Build a list of patients with Hyperlipidemia
+def get_patients_with_hyperlipidemia():
+    patient_ids = set()
+
+    for patient_id in patient_resources_map:
+        if has_hyperlipidemia(fhir_data, patient_id):
+            patient_ids.add(patient_id)
+
+    return list(patient_ids)
 
 # Define target codes for measurements and medications
-
 cholesterol_codes = ["Cholest SerPl-mCnc", "Trigl SerPl-mCnc"]
 glucose_codes = ["Glucose SerPl-mCnc", "Glucose Bld-mCnc",
                  "Glucose Ur Strip-mCnc", "Glucose CSF-mCnc", "Glucose p fast SerPl-mCnc"]
 hyperlip_med_codes = {"312961", "198211", "262095", "543354", "617318", "859749"}
 
+# Precompute the list of hyperlipidemia patients
+hyperlip_patients = get_patients_with_hyperlipidemia()
 
 # API
 @app.route('/')
