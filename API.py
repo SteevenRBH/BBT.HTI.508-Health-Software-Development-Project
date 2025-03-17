@@ -1,5 +1,4 @@
 # TODO: Create a local webserver and add the HTTP requests from a GUI
-# TODO: Create a local webserver and add the HTTP requests from a GUI
 
 from flask import Flask, render_template, jsonify
 from logic import get_hyperlipidemia_patients, get_patient_data
