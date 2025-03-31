@@ -12,6 +12,8 @@ with open(JSON_DATABASE, 'rb') as json_file:
     patient_json = json.load(json_file)
 
 
+
+
 """
 List of Patients with diagnosed Hyperlipidemia (check with team code and 
 Katariinas code) and related info:
