@@ -3,7 +3,7 @@ from logic import get_hyperlipidemia_patients, get_patient_data
 
 app = Flask(__name__, template_folder=".")
 
-
+# 2113340
 @app.route("/")
 def home():
     return render_template("frontend.html")
@@ -21,7 +21,7 @@ def get_patients():
 def api_get_patient_data(patient_id):
     patient_data = get_patient_data(patient_id)
     if patient_data is None:
-        return jsonify({"error": "Patient not found or does not have Hyperlipidemia."}), 404
+        return jsonify({"error": "Patient not found."}), 404
     return jsonify(patient_data), 200
 
 
@@ -46,19 +46,6 @@ def patient_page():
 
 if __name__ == "__main__":
     app.run(debug=True)
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

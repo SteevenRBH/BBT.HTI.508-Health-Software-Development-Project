@@ -1,5 +1,3 @@
-# TODO: Add functions that call the database and power the application
-
 import json
 from datetime import datetime
 
@@ -16,7 +14,6 @@ def load_patient_data():
 data = load_patient_data()
 
 
-# Determine if a patient has Hyperlipidemia
 def has_hyperlipidemia(resources):
     """Check if a patient's medical records indicate hyperlipidemia."""
     for entry in resources:
@@ -31,7 +28,6 @@ def has_hyperlipidemia(resources):
     return False
 
 
-# Build a list of patients with Hyperlipidemia
 def get_hyperlipidemia_patients():
     """Return a list of patients diagnosed with hyperlipidemia."""
     hyperlip_patients = []
@@ -68,11 +64,10 @@ glucose_codes = ["Glucose SerPl-mCnc", "Glucose Bld-mCnc", "Glucose Ur Strip-mCn
 hyperlip_med_codes = {"312961", "198211", "262095", "543354", "617318", "859749"}
 
 
-# Get patient details by ID
 def get_patient_data(patient_id):
-    """Lataa potilastiedot suoraan JSON-databasesta ja palauta tiedot."""
-    data = load_patient_data()  # Lataa data jokaisen haun yhteydessä
-    _, patient_resources_map = get_hyperlipidemia_patients()  # Rakenna potilaskartta uudelleen
+    """Fetch detailed patient data, including lab values and medication orders."""
+    data = load_patient_data()
+    _, patient_resources_map = get_hyperlipidemia_patients()
 
     if patient_id not in patient_resources_map:
         return None
@@ -81,13 +76,12 @@ def get_patient_data(patient_id):
 
     cholesterol_table = []
     glucose_table = []
-    medication_dispense_table = []
+    medication_table = []
 
     for entry in selected_resources:
         res = entry.get("resource", {})
         rtype = res.get("resourceType")
 
-        # Prosessoidaan Observation-datat
         if rtype == "Observation":
             code = res.get("code", {})
             code_text = code.get("text", "")
@@ -101,28 +95,35 @@ def get_patient_data(patient_id):
             value = res.get("valueQuantity", {}).get("value")
             unit = res.get("valueQuantity", {}).get("unit", "")
 
+            record = {"date": date_obj, "code": code_text, "value": value, "unit": unit}
             if code_text in cholesterol_codes:
-                cholesterol_table.append({"date": date_obj, "code": code_text, "value": value, "unit": unit})
+                cholesterol_table.append(record)
             elif code_text in glucose_codes:
-                glucose_table.append({"date": date_obj, "code": code_text, "value": value, "unit": unit})
+                glucose_table.append(record)
 
-        # Prosessoidaan MedicationDispense-tiedot
-        elif rtype in ["MedicationDispense", "MedicationAdministration"]:
+        elif rtype == "MedicationOrder":
             med_concept = res.get("medicationCodeableConcept", {})
             med_text = med_concept.get("text", "")
             if not med_text and "coding" in med_concept and med_concept.get("coding"):
                 med_text = med_concept["coding"][0].get("display", "")
             if "statin" in med_text.lower():
-                date_str = res.get("whenHandedOver") or res.get("effectiveDateTime")
                 try:
+                    date_str = res.get("dosageInstruction", [])[0].get("timing", {}).get("repeat", {}).get("boundsPeriod", {}).get("start")
                     date_obj = datetime.fromisoformat(date_str) if date_str else None
                 except Exception:
                     date_obj = None
-                medication_dispense_table.append({"date": date_obj, "medication": med_text})
+                dosage = res.get("dosageInstruction", [])[0].get("text", "") if res.get("dosageInstruction") else ""
+                medication_table.append({
+                    "date": date_obj,
+                    "medication": med_text,
+                    "dosage": dosage
+                })
+
+    # Sort medication table by date
+    medication_table.sort(key=lambda x: (x["date"] is not None, x["date"]))
 
     return {
         "cholesterol_measurements": cholesterol_table,
         "glucose_measurements": glucose_table,
-        "medication_dispenses": medication_dispense_table
+        "medication_dispenses": medication_table
     }
-
