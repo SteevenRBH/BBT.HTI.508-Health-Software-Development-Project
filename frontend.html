@@ -4,8 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Patient Health Management</title>
-    <link rel="stylesheet" href="styles.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -22,7 +20,7 @@
             border-radius: 10px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         }
-        h1 {
+        h1, h2 {
             color: #333;
         }
         .form-container {
@@ -44,121 +42,82 @@
         button:hover {
             background-color: #45a049;
         }
-        .charts-container {
-            display: flex;
-            justify-content: space-around;
-            flex-wrap: wrap;
+        table {
+            margin: 0 auto;
+            border-collapse: collapse;
+            width: 90%;
         }
-        canvas {
-            background: #f9f9f9;
-            border-radius: 5px;
-            margin-top: 10px;
-            max-width: 400px;
-            max-height: 300px;
+        th, td {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
         }
-        #error-message {
-            display: none;
+        th {
+            background-color: #f0f0f0;
+        }
+        .error-message {
             color: red;
             font-weight: bold;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Patient Health Management Dashboard</h1>
+<div class="container">
+    <h1>Patient Health Management Dashboard</h1>
 
-        <div class="form-container">
+    <div class="form-container">
+        <form action="/patient" method="get">
             <label for="patientId">Enter Patient ID:</label>
-            <input type="text" id="patientId" placeholder="e.g., patient123">
-            <button onclick="fetchPatientData()">Fetch Data</button>
-        </div>
-
-        <div id="error-message">Patient not found or does not have Hyperlipidemia.</div>
-
-        <div class="charts-container">
-            <canvas id="cholesterolChart"></canvas>
-            <canvas id="glucoseChart"></canvas>
-        </div>
-
-        <div class="medication-container">
-            <h2>Medications</h2>
-            <ul id="medicationList"></ul>
-        </div>
+            <input type="text" id="patientId" name="patientId" placeholder="e.g., 123456">
+            <button type="submit">Fetch Data</button>
+        </form>
     </div>
 
-<script>
-    let cholesterolChart = null;
-    let glucoseChart = null;
+    {% if error %}
+        <div class="error-message">{{ error }}</div>
+    {% endif %}
 
-    async function fetchPatientData() {
-        const patientId = document.getElementById('patientId').value.trim();
-        const errorMessage = document.getElementById('error-message');
-        const medicationList = document.getElementById('medicationList');
+    {% if cholesterol %}
+        <h2>Cholesterol Measurements</h2>
+        <table>
+            <tr><th>Date</th><th>Code</th><th>Value</th><th>Unit</th></tr>
+            {% for row in cholesterol %}
+                <tr>
+                    <td>{{ row.date }}</td>
+                    <td>{{ row.code }}</td>
+                    <td>{{ row.value }}</td>
+                    <td>{{ row.unit }}</td>
+                </tr>
+            {% endfor %}
+        </table>
+    {% endif %}
 
-        // Piilotetaan virheilmoitus ja tyhjennetään aiemmat lääkkeet
-        errorMessage.style.display = 'none';
-        medicationList.innerHTML = '';
+    {% if glucose %}
+        <h2>Glucose Measurements</h2>
+        <table>
+            <tr><th>Date</th><th>Code</th><th>Value</th><th>Unit</th></tr>
+            {% for row in glucose %}
+                <tr>
+                    <td>{{ row.date }}</td>
+                    <td>{{ row.code }}</td>
+                    <td>{{ row.value }}</td>
+                    <td>{{ row.unit }}</td>
+                </tr>
+            {% endfor %}
+        </table>
+    {% endif %}
 
-        // Poistetaan vanhat kaaviot, jos ne on jo olemassa
-        if (cholesterolChart) {
-            cholesterolChart.destroy();
-            cholesterolChart = null;
-        }
-        if (glucoseChart) {
-            glucoseChart.destroy();
-            glucoseChart = null;
-        }
-
-        try {
-            const response = await fetch(`http://127.0.0.1:5000/api/patient/${patientId}`);
-            const data = await response.json();
-
-            if (response.status !== 200 || !data.cholesterol_measurements || !data.glucose_measurements) {
-                errorMessage.style.display = 'block';
-                return;
-            }
-
-            cholesterolChart = displayChart('cholesterolChart', data.cholesterol_measurements, 'Cholesterol Levels', 'Date', 'mg/dL');
-            glucoseChart = displayChart('glucoseChart', data.glucose_measurements, 'Glucose Levels', 'Date', 'mg/dL');
-
-            data.medication_dispenses.forEach(med => {
-                const li = document.createElement('li');
-                li.textContent = `${new Date(med.date).toLocaleDateString()}: ${med.medication}`;
-                medicationList.appendChild(li);
-            });
-        } catch (error) {
-            errorMessage.style.display = 'block';
-        }
-    }
-
-    function displayChart(chartId, measurements, title, xLabel, yLabel) {
-        const ctx = document.getElementById(chartId).getContext('2d');
-        const labels = measurements.map(item => new Date(item.date).toLocaleDateString());
-        const values = measurements.map(item => item.value);
-
-        return new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: title,
-                    data: values,
-                    borderColor: 'rgba(75, 192, 192, 1)',
-                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                    fill: true,
-                    tension: 0.1
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    x: { title: { display: true, text: xLabel } },
-                    y: { title: { display: true, text: yLabel } }
-                }
-            }
-        });
-    }
-</script>
-
+    {% if medications %}
+        <h2>Medications</h2>
+        <table>
+            <tr><th>Date</th><th>Medication</th></tr>
+            {% for med in medications %}
+                <tr>
+                    <td>{{ med.date }}</td>
+                    <td>{{ med.medication }}</td>
+                </tr>
+            {% endfor %}
+        </table>
+    {% endif %}
+</div>
 </body>
 </html>
