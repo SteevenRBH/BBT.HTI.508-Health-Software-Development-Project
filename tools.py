@@ -53,106 +53,6 @@ def normalize_datetime(dt):
         return dt.replace(tzinfo=timezone.utc)
     return dt
 
-# def plot_measurements(measurements_data, medication, smooth=False, show_units=False):
-#     """
-#     Plots time series data for lab measurements and superimposes vertical lines for medications.
-#
-#     Parameters:
-#         measurements_data (dict): Mapping of measurement codes to date->data-point dictionaries.
-#         medication (dict): Mapping of medication codes to lists of dicts with 'date', 'name', 'dosage'.
-#         smooth (bool): If True, smoothens the data with splines before plotting.
-#         show_units (bool): If True, display units above each measurement point.
-#     """
-#     # --- Setup ---
-#     fig, ax = plt.subplots(figsize=(10, 6))
-#     color_map = create_combined_colormap(measurements_data, medication)
-#
-#     measurement_labels_plotted = False  # Track if any measurement data is plotted
-#
-#     # --- Plot Lab Measurements ---
-#     for code, data in measurements_data.items():
-#         if not data:
-#             continue
-#
-#         dates = sorted(data.keys())
-#         values = [sum(entry["value"] for entry in data[date]) / len(data[date]) for date in dates]
-#         dates_numeric = np.array([date.timestamp() for date in dates])
-#         values = np.array(values)
-#         color = color_map[code]
-#
-#         if len(dates) > 2 and smooth:
-#             spline = make_interp_spline(dates_numeric, values, k=2)
-#             smooth_dates_numeric = np.linspace(dates_numeric.min(), dates_numeric.max(), 300)
-#             smooth_values = spline(smooth_dates_numeric)
-#             smooth_dates = [datetime.fromtimestamp(d) for d in smooth_dates_numeric]
-#             ax.plot(smooth_dates, smooth_values, linestyle='-', color=color)
-#         else:
-#             ax.plot(dates, values, linestyle='-', color=color)
-#
-#         ax.scatter(dates, values, color=color, zorder=3, label=code)
-#         measurement_labels_plotted = True  # Mark that we have data for the legend
-#
-#         if show_units:
-#             units = [data[date][0]["unit"] for date in dates]
-#             for i, txt in enumerate(units):
-#                 ax.annotate(txt, (dates[i], values[i]), textcoords="offset points", xytext=(0, 5), ha='center')
-#
-#     # --- Plot Medications ---
-#     med_records = []
-#
-#     for code in list(medication.keys()):
-#         records = medication[code]
-#         for med in records:
-#             if med["date"]:
-#                 med_records.append(med | {"code": code})
-#
-#     used_annotations = set()
-#     med_for_legend = {}
-#
-#     for med in med_records:
-#         date = med["date"]
-#         name = med["name"]
-#         code = med["code"]
-#         color = color_map[code]
-#
-#         ax.axvline(date, linestyle='--', color=color)
-#         med_for_legend[name] = color
-#         if (date, name) not in used_annotations:
-#             ax.annotate(name, xy=(date, ax.get_ylim()[0]), xytext=(0, 10),
-#                         textcoords="offset points", ha='center', va='bottom',
-#                         fontsize=8, rotation=90, color='black',
-#                         bbox=dict(boxstyle="round,pad=0.3", fc="white", ec=color, lw=0.8))
-#             used_annotations.add((date, name))
-#
-#     # --- Legends ---
-#     bold_font = FontProperties(weight='bold')
-#
-#     # Wrap medication names
-#     wrapped_med_names = {wrap_text(name): color for name, color in med_for_legend.items()}
-#
-#     # Only add measurement legend if any labels were actually plotted
-#     if measurement_labels_plotted:
-#         measurement_legend = ax.legend(title="Measurements", bbox_to_anchor=(1, 1), loc="upper left",
-#                                        title_fontproperties=bold_font, ncol=1)
-#         if med_for_legend:
-#             ax.add_artist(measurement_legend)
-#
-#     # Add medication legend if any medication data exists
-#     if med_for_legend:
-#         med_handles = [plt.Line2D([0], [0], color=color, linestyle='--', label=name)
-#                        for name, color in wrapped_med_names.items()]
-#         ax.legend(handles=med_handles, title="Medications", bbox_to_anchor=(1, 0), loc="lower left",
-#                   title_fontproperties=bold_font, ncol=1)
-#
-#     # --- Final Touches ---
-#     ax.set_xlabel("Date")
-#     ax.set_ylabel("Measurement Value (mg/dL)")
-#     ax.set_title("Cholesterol and Glucose Measurements Over Time", weight='bold')
-#     plt.xticks(rotation=45)
-#     ax.grid()
-#     plt.tight_layout()
-#     return fig
-
 def plot_measurements(measurements_data, medication, cholest_ref_values=None, smooth=False, show_units=False):
     """
     Plots time series data for lab measurements with dual Y-axes and superimposes vertical lines for medications.
@@ -399,7 +299,7 @@ def generate_plot_uri(measurements, medications, cholest_ref_values=None, smooth
 
     # Check if there is any data in the measurements or medications
     if not any(measurements[code] for code in measurements) and not any(medications[code] for code in medications):
-        # If both measurements and medications have no data, set the flag to True and image_uri to None
+        # If both measurements and medications have no data, set image_uri to None
         image_uri = None  # No plot to display
     else:
         # Create a buffer to hold the plot image

@@ -257,6 +257,7 @@ def cholest_reference_values(fhir_data, patient_id):
 
 
 if __name__=="__main__":
+### ALL THE CODE BELOW IS FOR TESTING PURPOSES ONLY ###
    # Importing the database
    fhir_data = load_patient_data()
 
