@@ -1,0 +1,312 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 40px;
+}
+
+h1 {
+    text-align: center;
+}
+
+h2 {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+/* Center-align all <h3> headers */
+h3 {
+    text-align: center; /* Center the header text horizontally */
+    margin: 20px 0; /* Add vertical spacing above and below */
+    font-size: 18px; /* Adjust font size for consistency */
+    font-weight: bold; /* Make the headers bold for emphasis */
+    color: #333; /* Set a dark gray color for readability */
+}
+
+.container {
+    display: flex;
+    gap: 20px;
+}
+
+.left-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.left-panel .section {
+    border: 1px solid #ccc;
+    padding: 10px;
+    min-height: 80px;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+}
+
+.right-panel {
+    flex: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.right-panel img {
+    max-width: 100%;
+    height: auto;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+}
+
+.error-message {
+    color: #dc3545;
+    margin-top: 10px;
+    font-weight: 500;
+}
+
+.table-container {
+    display: flex;
+    justify-content: center; /* Centers the table horizontally */
+    margin: 20px 0; /* Adds vertical spacing */
+}
+
+.medications-table {
+    width: auto; /* Automatically adjusts the width to fit content */
+    border-collapse: separate; /* Prevents collapsing borders for rounded corners */
+    border-spacing: 0; /* Removes spacing between borders */
+    background-color: white; /* Specific background for the table */
+    font-size: 0.95em; /* Adjust font size for better readability */
+    margin: auto; /* Center-aligns the table */
+    border: 1px solid #ccc; /* Adds an outer border around the table */
+    border-radius: 8px; /* Rounded corners for the table */
+    overflow: hidden; /* Ensures no content spills over the rounded corners */
+}
+
+.medications-table th,
+.medications-table td {
+    padding: 10px 15px; /* Adds adequate padding for readability */
+    text-align: center; /* Centers text in both header and cells */
+    border: 1px solid #ccc; /* Adds light borders for visual clarity */
+}
+
+.medications-table th {
+    background-color: #f8f9fa; /* Light gray background for headers */
+    color: #2c3e50; /* Dark color for text */
+    font-weight: 600; /* Makes header text bold */
+    padding: 12px; /* Adds padding for headers */
+    text-align: center; /* Centers header text */
+    border-bottom: 2px solid #dee2e6; /* Adds a bottom separator line for headers */
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.medications-table td {
+    padding: 12px; /* Adds padding for table cells */
+    text-align: center; /* Centers cell text */
+    border-top: 1px solid #dee2e6; /* Adds a light line between rows */
+}
+
+.medications-table tr:last-child td {
+    border-bottom: none;
+}
+
+.medications-table tr:hover {
+    background-color: #f1f1f1; /* Light gray for hovered rows */
+}
+
+.diagnoses-table td {
+    padding: 12px 15px;
+}
+
+.diagnoses-table th,
+.diagnoses-table td {
+    text-align: center; /* Ensures diagnoses table content is centered too */
+}
+
+/* Add responsive design */
+@media screen and (max-width: 600px) {
+    .table-container {
+        margin: 0.5em 0;
+        border-radius: 6px;
+    }
+
+    .medications-table {
+        font-size: 0.9em;
+    }
+
+    .medications-table th,
+    .medications-table td {
+        padding: 8px;
+    }
+
+    .diagnoses-table td {
+        padding: 10px 12px;
+    }
+}
+
+
+/* Switch styling */
+.option-container {
+    display: flex;
+    align-items: center;
+    margin: 8px 0;
+}
+
+.switch-label {
+    margin-left: 10px;
+}
+
+/* The switch - the box around the slider */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 44px;  /* Reduced from 60px */
+    height: 24px; /* Reduced from 34px */
+}
+
+/* Hide default HTML checkbox */
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+/* The slider */
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    -webkit-transition: .4s;
+    transition: .4s;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;  /* Reduced from 26px */
+    width: 18px;   /* Reduced from 26px */
+    left: 3px;     /* Reduced from 4px */
+    bottom: 3px;   /* Reduced from 4px */
+    background-color: white;
+    -webkit-transition: .4s;
+    transition: .4s;
+}
+
+input:checked + .slider {
+    background-color: #2196F3;
+}
+
+input:focus + .slider {
+    box-shadow: 0 0 1px #2196F3;
+}
+
+input:checked + .slider:before {
+    -webkit-transform: translateX(20px); /* Reduced from 26px */
+    -ms-transform: translateX(20px);     /* Reduced from 26px */
+    transform: translateX(20px);         /* Reduced from 26px */
+}
+
+/* Rounded sliders */
+.slider.round {
+    border-radius: 24px;  /* Adjusted to match new height */
+}
+
+.slider.round:before {
+    border-radius: 50%;
+}
+
+.button-container {
+    display: flex;
+    justify-content: center;
+    padding: 10px 0;
+}
+
+.details-btn {
+    padding: 8px 16px;
+    background-color: #2196F3;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.3s ease;
+}
+
+.details-btn:hover {
+    background-color: #1976D2;
+}
+
+.details-btn:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+}
+
+/* Styling for the Patient ID form container */
+#patient-form {
+    display: flex; /* Align form elements inline */
+    align-items: center; /* Vertically center items */
+    justify-content: center; /* Center the form within the container */
+    gap: 10px; /* Add spacing between input and buttons */
+    margin-top: 20px; /* Add spacing above the form */
+}
+
+/* Styling for the Patient ID input field */
+#patient_id {
+    padding: 10px; /* Add padding inside the input field */
+    font-size: 16px; /* Larger font for readability */
+    width: 220px; /* Set a fixed width for better structure */
+    border: 1px solid #ccc; /* Light border around the input */
+    border-radius: 4px; /* Rounded corners for a cleaner look */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+}
+
+/* Styling for buttons */
+button {
+    padding: 10px 20px; /* Comfortable padding for click target */
+    font-size: 16px; /* Consistent font size for text */
+    color: #fff; /* White text color for visibility */
+    background-color: #4CAF50; /* Primary green color */
+    border: none; /* Remove default border */
+    border-radius: 4px; /* Rounded button edges */
+    cursor: pointer; /* Pointer cursor on hover */
+    transition: background-color 0.3s ease; /* Smooth hover effect */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Add shadow for depth */
+}
+
+/* Hover effect for buttons */
+button:hover {
+    background-color: #45a049; /* Slightly darker green on hover */
+}
+
+/* Styling for disabled buttons */
+button:disabled {
+    background-color: #ccc; /* Gray background for disabled button */
+    cursor: not-allowed; /* Show "not allowed" cursor */
+    color: #666; /* Adjust text color for disabled state */
+    box-shadow: none; /* Remove shadow for disabled buttons */
+}
+
+/* Error message styling */
+.error-message {
+    text-align: center; /* Center error text */
+    color: #dc3545; /* Red color for error message */
+    font-weight: bold; /* Make it more prominent */
+    margin-top: 10px; /* Add space above the error message */
+}
+.medications-table th {
+    background-color: #f8f9fa; /* Light gray background for headers */
+    color: #2c3e50; /* Dark color for text */
+    font-weight: 600; /* Bold font for headers */
+    padding: 12px; /* Space inside the headers */
+    text-align: center; /* Center-align the header text */
+    border-bottom: 2px solid #dee2e6; /* Separator border */
+    position: sticky; /* Keep it visible when table scrolls */
+    top: 0; /* Ensures position at the top when sticky */
+    z-index: 1; /* Makes sure the header is above other content */
+}
+
+.medications-table tr:last-child td {
+    border-bottom: 1px solid #dee2e6; /* Ensures bottom line is visible for the last row */
+}
