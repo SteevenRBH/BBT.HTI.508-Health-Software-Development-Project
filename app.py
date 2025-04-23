@@ -131,4 +131,5 @@ def details():
                            glucose=glucose, medications=medications, patient_not_found=False)
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    from werkzeug.serving import run_simple
+    run_simple('localhost', 5000, app)
