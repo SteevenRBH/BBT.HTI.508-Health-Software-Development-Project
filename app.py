@@ -1,152 +1,134 @@
-import json
+from flask import Flask, render_template, request, redirect, url_for
+from logic import *
+from tools import generate_plot_uri
 from datetime import datetime
-from flask import Flask, jsonify
 
+
+# Load data
+fhir_data = load_patient_data()
+
+# Create Flask app
 app = Flask(__name__)
 
-JSON_DATABASE = 'json_database.json'
+@app.template_filter('datetime')
+def format_datetime(value, format="%Y-%m-%d"):
+    if isinstance(value, str):
+        value = datetime.strptime(value, format)
+    return value.strftime('%B %d, %Y')
 
-with open(JSON_DATABASE, 'r', encoding='utf-8') as f:
-    fhir_data = json.load(f)
-
-#  Determine if patient has Hyperlipidemia
-def has_hyperlipidemia(fhir_data, patient_id):
+@app.template_filter('dictsubcheck')
+def dict_has_non_empty_subdicts(value):
     """
-    Check if a patient has hyperlipidemia based on their Condition resources.
-
-    :param fhir_data: List containing FHIR JSON database (list of patient resource lists).
-    :param patient_id: ID of the patient to check.
-    :return: True if the patient has hyperlipidemia, False otherwise.
+    Custom Jinja2 filter to check if a dictionary has at least
+    one non-empty sub-dictionary.
     """
-    hyperlipidemia_codes = {"E78", "E78.0", "E78.1", "E78.2", "E78.3", "E78.4",
-                            "E78.5", "E78.6", "E78.7", "E78.8", "E78.9",
-                            "55822004"}  # Both ICD-10 and SNOMED codes
-
-    for patient_resources in fhir_data:
-        for entry in patient_resources:
-            resource = entry.get("resource", {})
-            if resource.get("resourceType") == "Condition" and resource.get("patient", {}).get(
-                    "reference") == f"Patient/{patient_id}":
-                coding_list = resource.get("code", {}).get("coding", [])
-                if isinstance(coding_list, list):
-                    for coding in coding_list:
-                        if isinstance(coding, dict) and (
-                                coding.get("code") in hyperlipidemia_codes or
-                                "hyperlipidemia" in coding.get("display", "").lower()):
-                            return True
+    if isinstance(value, dict):
+        return any(isinstance(v, dict) and len(v) > 0 for v in value.values())
     return False
 
-# Build a dictionary mapping patient ID to resources
-patient_resources_map = {}
+@app.route("/", methods=["GET"])
+def index():
+    # Default values for the plot and no data flag
+    patient_id = None
+    image_uri = None
+    show_ref_vals = True  # Set default to True
+    smooth_curves = False  # Set default to False
+    show_units = False  # Set default to False
+    medications = {}  # Initialize empty medications dictionary
 
-for patient_resources in fhir_data:
-    for entry in patient_resources:
-        resource = entry.get("resource", {})
-        if resource.get("resourceType") == "Patient":
-            patient_id = resource.get("id", "")
-            if patient_id:
-                patient_resources_map[patient_id] = patient_resources
-
-# Build a list of patients with Hyperlipidemia
-def get_patients_with_hyperlipidemia():
-    patient_ids = set()
-
-    for patient_id in patient_resources_map:
-        if has_hyperlipidemia(fhir_data, patient_id):
-            patient_ids.add(patient_id)
-
-    return list(patient_ids)
-
-# Define target codes for measurements and medications
-cholesterol_codes = ["Cholest SerPl-mCnc", "Trigl SerPl-mCnc"]
-glucose_codes = ["Glucose SerPl-mCnc", "Glucose Bld-mCnc",
-                 "Glucose Ur Strip-mCnc", "Glucose CSF-mCnc", "Glucose p fast SerPl-mCnc"]
-hyperlip_med_codes = {"312961", "198211", "262095", "543354", "617318", "859749"}
-
-# Precompute the list of hyperlipidemia patients
-hyperlip_patients = get_patients_with_hyperlipidemia()
-
-# API
-@app.route('/')
-def home():
-    return "Welcome to the Patient Data API!"
+    # Render the index page with all parameters
+    return render_template("index.html",
+                           patient_id=patient_id,
+                           image_uri=image_uri,
+                           show_ref_vals=show_ref_vals,
+                           smooth_curves=smooth_curves,
+                           show_units=show_units,
+                           medications=medications)
 
 
-# API to Get Patient Information with Hyperlipidemia
+@app.route("/overview/", methods=["GET", "POST"])
+def overview():
+    # Get patient_id from the GET request (query string)
+    patient_id = request.args.get('patient_id', type=int)
 
-@app.route('/api/patients', methods=['GET'])
-def get_patients():
-    return jsonify(hyperlip_patients), 200
+    # Get all toggle values from the request
+    show_ref_vals = request.args.get('show_ref_vals', 'true').lower() == 'true'
+    smooth_curves = request.args.get('smooth_curves', 'false').lower() == 'true'
+    show_units = request.args.get('show_units', 'false').lower() == 'true'
 
+    if patient_id is None:
+        return redirect(url_for('index'))
 
-# API: Get Patient Data by ID
-@app.route('/api/patient/<patient_id>', methods=['GET'])
-def get_patient_data(patient_id):
-    if patient_id not in patient_resources_map:
-        return jsonify({"error": "Patient not found or does not have Hyperlipidemia."}), 404
+    # Check if patient exists in database
+    patient_id_exists, _ = patient_exists(fhir_data, patient_id)
+    if not patient_id_exists:
+        return render_template("index.html",
+                               patient_id=patient_id,
+                               patient_not_found=True,
+                               show_ref_vals=show_ref_vals,
+                               smooth_curves=smooth_curves,
+                               show_units=show_units,
+                               medications ={})
 
-    selected_resources = patient_resources_map[patient_id]
+    # Get diagnosis information
+    has_hyperlipidemia, hyperlipidemia_date = has_disorder(fhir_data, patient_id, "hyperlipidemia")
+    has_diabetes, diabetes_date = has_disorder(fhir_data, patient_id, "diabetes")
 
-    cholesterol_table = []
-    glucose_table = []
-    medication_dispense_table = []
-
-    for entry in selected_resources:
-        res = entry.get("resource", {})
-        rtype = res.get("resourceType")
-
-        # Process Observation resources
-        if rtype == "Observation":
-            code = res.get("code", {})
-            code_text = code.get("text", "")
-            if not code_text and "coding" in code and code.get("coding"):
-                code_text = code["coding"][0].get("display", "")
-            date_str = res.get("effectiveDateTime")
-            try:
-                date_obj = datetime.fromisoformat(date_str) if date_str else None
-            except Exception:
-                date_obj = None
-            value = res.get("valueQuantity", {}).get("value")
-            unit = res.get("valueQuantity", {}).get("unit", "")
-            if code_text in cholesterol_codes:
-                cholesterol_table.append({
-                    "date": date_obj,
-                    "code": code_text,
-                    "value": value,
-                    "unit": unit
-                })
-            elif code_text in glucose_codes:
-                glucose_table.append({
-                    "date": date_obj,
-                    "code": code_text,
-                    "value": value,
-                    "unit": unit
-                })
-
-        # Process MedicationDispense/Administration events
-        elif rtype in ["MedicationDispense", "MedicationAdministration"]:
-            med_concept = res.get("medicationCodeableConcept", {})
-            med_text = med_concept.get("text", "")
-            if not med_text and "coding" in med_concept and med_concept.get("coding"):
-                med_text = med_concept["coding"][0].get("display", "")
-            if "statin" in med_text.lower():
-                date_str = res.get("whenHandedOver") or res.get("effectiveDateTime")
-                try:
-                    date_obj = datetime.fromisoformat(date_str) if date_str else None
-                except Exception:
-                    date_obj = None
-                medication_dispense_table.append({
-                    "date": date_obj,
-                    "medication": med_text
-                })
-
-    return jsonify({
-        "cholesterol_measurements": cholesterol_table,
-        "glucose_measurements": glucose_table,
-        "medication_dispenses": medication_dispense_table
-    }), 200
+    # Format the diagnosis messages
+    hyperlipidemia_msg = (
+        f"Hyperlipidemia diagnosed on {datetime.strptime(hyperlipidemia_date.split('T')[0], '%Y-%m-%d').strftime('%B %d, %Y')}"
+        if has_hyperlipidemia else "Hyperlipidemia not diagnosed")
+    diabetes_msg = (
+        f"Diabetes diagnosed on {datetime.strptime(diabetes_date.split('T')[0], '%Y-%m-%d').strftime('%B %d, %Y')}"
+        if has_diabetes else "Diabetes not diagnosed")
 
 
-# Start the Flask application
-if __name__ == '__main__':
+    # Fetch data for the provided patient ID
+    cholesterol = get_measurements(fhir_data, patient_id, "cholesterol")
+    glucose = get_measurements(fhir_data, patient_id, "glucose")
+
+    # Combine the data
+    measurements = glucose | cholesterol
+    medications = get_medications(fhir_data, patient_id, "hyperlipidemia")
+
+    # Generate reference cholesterol values only if show_ref_vals is True
+    cholest_ref = cholest_reference_values(fhir_data, patient_id) if show_ref_vals else None
+
+    # Generate plot URI and check if there is data
+    image_uri = generate_plot_uri(measurements, medications, cholest_ref, smooth_curves, show_units)
+
+    # Render the overview page with all parameters
+    return render_template("index.html",
+                           patient_id=patient_id,
+                           image_uri=image_uri,
+                           patient_not_found=False,
+                           show_ref_vals=show_ref_vals,
+                           smooth_curves=smooth_curves,
+                           show_units=show_units,
+                           hyperlipidemia_msg=hyperlipidemia_msg,
+                           diabetes_msg=diabetes_msg,
+                           medications = medications)
+
+
+@app.route('/details/', methods=['GET'])
+def details():
+    patient_id = request.args.get('patient_id', type=int)
+    if not patient_id:
+        return render_template('details.html', patient_id=None, patient_not_found=True)
+
+    patient_exists_flag, _ = patient_exists(fhir_data, patient_id)
+
+    if not patient_exists_flag:
+        return render_template('details.html', patient_id=patient_id, patient_not_found=True)
+
+    # Fetch cholesterol, glucose measurements and medications
+    cholesterol = get_measurements(fhir_data, patient_id, "cholesterol")
+    glucose = get_measurements(fhir_data, patient_id, "glucose")
+    medications = get_medications(fhir_data, patient_id, "hyperlipidemia")
+
+    # Render the details page with cholesterol data
+    return render_template('details.html', patient_id=patient_id, cholesterol=cholesterol,
+                           glucose=glucose, medications=medications, patient_not_found=False)
+
+if __name__ == "__main__":
     app.run(debug=True)

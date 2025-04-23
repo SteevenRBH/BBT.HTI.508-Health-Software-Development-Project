@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>LipoTrack - Details</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <h1>LipoTrack</h1>
+    <h2>Statin medication follow-up software</h2>
+
+    <div class="details-container">
+
+        <div class="details-section">
+            <h3>Patient Information</h3>
+            <form id="patient-form">
+                <label for="patient_id">Enter a patient ID:</label>
+                <input type="text" id="patient_id" name="patient_id" required value="{{ patient_id or '' }}">
+                <button type="submit">Fetch Data</button>
+                <button id="back-to-overview" type="button" onclick="goToOverview()"
+                    {% if not patient_id %}disabled{% endif %}>Go to Overview</button>
+            </form>
+            {% if patient_not_found %}
+                <p class="error-message">The patient ID {{ patient_id }} is not found in the database</p>
+            {% endif %}
+        </div>
+
+
+        <div class="details-section">
+    <h3>Cholesterol Measurements</h3>
+    {% if cholesterol and cholesterol|dictsubcheck %}
+        <div class="table-container">
+            <table class="medications-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Code</th>
+                        <th>Value</th>
+                        <th>Unit</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for code, measurements in cholesterol.items() %}
+                        {% for date, entries in measurements.items() %}
+                            {% for entry in entries %}
+                                <tr>
+                                    <td>{{ date.strftime('%B %d, %Y') }}</td>
+                                    <td>{{ code }}</td>
+                                    <td>{{ entry.value }}</td>
+                                    <td>{{ entry.unit }}</td>
+                                </tr>
+                            {% endfor %}
+                        {% endfor %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p>No cholesterol measurements found for this patient.</p>
+    {% endif %}
+</div>
+
+        <div class="details-section">
+    <h3>Glucose Measurements</h3>
+    {% if glucose and glucose|dictsubcheck %}
+        <div class="table-container">
+            <table class="medications-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Code</th>
+                        <th>Value</th>
+                        <th>Unit</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for code, measurements in glucose.items() %}
+                        {% for date, entries in measurements.items() %}
+                            {% for entry in entries %}
+                                <tr>
+                                    <td>{{ date.strftime('%B %d, %Y') }}</td>
+                                    <td>{{ code }}</td>
+                                    <td>{{ entry.value }}</td>
+                                    <td>{{ entry.unit }}</td>
+                                </tr>
+                            {% endfor %}
+                        {% endfor %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p>No glucose measurements found for this patient.</p>
+    {% endif %}
+</div>
+
+<div class="details-section">
+    <h3>Medications</h3>
+    {% if medications %}
+        <div class="table-container">
+            <table class="medications-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Medication</th>
+                        <th>Dosage</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for med_list in medications.values() %}
+                        {% for med in med_list %}
+                            <tr>
+                                <td>{{ med.date|datetime }}</td>
+                                <td>{{ med.name }}</td>
+                                <td>{{ med.dosage }}</td>
+                            </tr>
+                        {% endfor %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p>No medications found for this patient.</p>
+    {% endif %}
+</div>
+
+    </div>
+
+    <script>
+        // Redirect to the overview page
+        function goToOverview() {
+            var patientId = document.getElementById("patient_id").value;
+            if (patientId) {
+                window.location.href = `/overview/?patient_id=${patientId}`;
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,423 @@
+import io
+import base64
+import numpy as np
+import matplotlib.pyplot as plt
+from datetime import datetime
+from scipy.interpolate import make_interp_spline
+from matplotlib.font_manager import FontProperties
+import matplotlib.dates as mdates
+from datetime import timedelta, timezone
+
+
+def wrap_text(text, max_length=20):
+    """Utility function to wrap text to fit in legend"""
+    # Split the text into words
+    words = text.split()
+    wrapped_text = []
+    current_line = ""
+
+    for word in words:
+        # If the current line plus the word exceeds max_length, wrap to the next line
+        if len(current_line) + len(word) + 1 > max_length:
+            wrapped_text.append(current_line)
+            current_line = word
+        else:
+            if current_line:
+                current_line += " " + word
+            else:
+                current_line = word
+    wrapped_text.append(current_line)
+
+    return "\n".join(wrapped_text)
+
+def create_combined_colormap(measurements_data, medication):
+    # --- Combine the keys ---
+    measurement_codes = list(measurements_data.keys())
+    medication_codes = list(medication.keys())
+    all_codes = measurement_codes + medication_codes  # Combined list of all codes
+
+    # --- Create a colormap for the combined list of keys ---
+    num_colors = len(all_codes)  # Number of required colors
+
+    # Generate colors using the colormap
+    available_colors = [plt.get_cmap("tab20c")(i / (num_colors - 1)) for i in range(num_colors)]  # Get evenly spaced colors
+
+    # Create a color map dictionary (key -> color)
+    color_map = {code: available_colors[i] for i, code in enumerate(all_codes)}
+
+    return color_map
+
+def normalize_datetime(dt):
+    """Converts datetime to timezone-aware if it isn't already"""
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt
+
+# def plot_measurements(measurements_data, medication, smooth=False, show_units=False):
+#     """
+#     Plots time series data for lab measurements and superimposes vertical lines for medications.
+#
+#     Parameters:
+#         measurements_data (dict): Mapping of measurement codes to date->data-point dictionaries.
+#         medication (dict): Mapping of medication codes to lists of dicts with 'date', 'name', 'dosage'.
+#         smooth (bool): If True, smoothens the data with splines before plotting.
+#         show_units (bool): If True, display units above each measurement point.
+#     """
+#     # --- Setup ---
+#     fig, ax = plt.subplots(figsize=(10, 6))
+#     color_map = create_combined_colormap(measurements_data, medication)
+#
+#     measurement_labels_plotted = False  # Track if any measurement data is plotted
+#
+#     # --- Plot Lab Measurements ---
+#     for code, data in measurements_data.items():
+#         if not data:
+#             continue
+#
+#         dates = sorted(data.keys())
+#         values = [sum(entry["value"] for entry in data[date]) / len(data[date]) for date in dates]
+#         dates_numeric = np.array([date.timestamp() for date in dates])
+#         values = np.array(values)
+#         color = color_map[code]
+#
+#         if len(dates) > 2 and smooth:
+#             spline = make_interp_spline(dates_numeric, values, k=2)
+#             smooth_dates_numeric = np.linspace(dates_numeric.min(), dates_numeric.max(), 300)
+#             smooth_values = spline(smooth_dates_numeric)
+#             smooth_dates = [datetime.fromtimestamp(d) for d in smooth_dates_numeric]
+#             ax.plot(smooth_dates, smooth_values, linestyle='-', color=color)
+#         else:
+#             ax.plot(dates, values, linestyle='-', color=color)
+#
+#         ax.scatter(dates, values, color=color, zorder=3, label=code)
+#         measurement_labels_plotted = True  # Mark that we have data for the legend
+#
+#         if show_units:
+#             units = [data[date][0]["unit"] for date in dates]
+#             for i, txt in enumerate(units):
+#                 ax.annotate(txt, (dates[i], values[i]), textcoords="offset points", xytext=(0, 5), ha='center')
+#
+#     # --- Plot Medications ---
+#     med_records = []
+#
+#     for code in list(medication.keys()):
+#         records = medication[code]
+#         for med in records:
+#             if med["date"]:
+#                 med_records.append(med | {"code": code})
+#
+#     used_annotations = set()
+#     med_for_legend = {}
+#
+#     for med in med_records:
+#         date = med["date"]
+#         name = med["name"]
+#         code = med["code"]
+#         color = color_map[code]
+#
+#         ax.axvline(date, linestyle='--', color=color)
+#         med_for_legend[name] = color
+#         if (date, name) not in used_annotations:
+#             ax.annotate(name, xy=(date, ax.get_ylim()[0]), xytext=(0, 10),
+#                         textcoords="offset points", ha='center', va='bottom',
+#                         fontsize=8, rotation=90, color='black',
+#                         bbox=dict(boxstyle="round,pad=0.3", fc="white", ec=color, lw=0.8))
+#             used_annotations.add((date, name))
+#
+#     # --- Legends ---
+#     bold_font = FontProperties(weight='bold')
+#
+#     # Wrap medication names
+#     wrapped_med_names = {wrap_text(name): color for name, color in med_for_legend.items()}
+#
+#     # Only add measurement legend if any labels were actually plotted
+#     if measurement_labels_plotted:
+#         measurement_legend = ax.legend(title="Measurements", bbox_to_anchor=(1, 1), loc="upper left",
+#                                        title_fontproperties=bold_font, ncol=1)
+#         if med_for_legend:
+#             ax.add_artist(measurement_legend)
+#
+#     # Add medication legend if any medication data exists
+#     if med_for_legend:
+#         med_handles = [plt.Line2D([0], [0], color=color, linestyle='--', label=name)
+#                        for name, color in wrapped_med_names.items()]
+#         ax.legend(handles=med_handles, title="Medications", bbox_to_anchor=(1, 0), loc="lower left",
+#                   title_fontproperties=bold_font, ncol=1)
+#
+#     # --- Final Touches ---
+#     ax.set_xlabel("Date")
+#     ax.set_ylabel("Measurement Value (mg/dL)")
+#     ax.set_title("Cholesterol and Glucose Measurements Over Time", weight='bold')
+#     plt.xticks(rotation=45)
+#     ax.grid()
+#     plt.tight_layout()
+#     return fig
+
+def plot_measurements(measurements_data, medication, cholest_ref_values=None, smooth=False, show_units=False):
+    """
+    Plots time series data for lab measurements with dual Y-axes and superimposes vertical lines for medications.
+    Uses triangular markers for cholesterol and circular markers for glucose measurements.
+
+    Parameters:
+        measurements_data (dict): Mapping of measurement codes to date->data-point dictionaries.
+        medication (dict): Mapping of medication codes to lists of dicts with 'date', 'name', 'dosage'.
+        cholest_ref_values (dict, optional): Dictionary with dates as keys and [lower, upper] bounds as values.
+        smooth (bool): If True, smoothens the data with splines before plotting.
+        show_units (bool): If True, display units above each measurement point.
+    """
+    # --- Setup ---
+    fig, ax1 = plt.subplots(figsize=(10, 6))
+    ax2 = ax1.twinx()  # Create second Y-axis
+    
+    # Configure date formatting
+    locator = mdates.AutoDateLocator()
+    formatter = mdates.ConciseDateFormatter(locator)
+    ax1.xaxis.set_major_locator(locator)
+    ax1.xaxis.set_major_formatter(formatter)
+    
+    # Add reference values shading if provided
+    if cholest_ref_values:
+        dates = sorted(cholest_ref_values.keys())
+        lower_bounds = [cholest_ref_values[date][0] for date in dates]
+        upper_bounds = [cholest_ref_values[date][1] for date in dates]
+        
+        # Get y-axis limits to extend the shading
+        ymax = 1000  # Set a reasonable maximum for cholesterol values
+
+        # Normal cholesterol range (below lower bound)
+        ax1.fill_between(dates, 0 * len(dates), lower_bounds,
+                         alpha=0.02, color='midnightblue')
+        
+        # Borderline range (reference values)
+        ax1.fill_between(dates, lower_bounds, upper_bounds, 
+                        alpha=0.2, color='orange')
+        
+        # High cholesterol range (above upper bound)
+        ax1.fill_between(dates, upper_bounds, [ymax] * len(dates),
+                        alpha=0.2, color='red')
+    
+    color_map = create_combined_colormap(measurements_data, medication)
+
+    measurement_labels_plotted = False
+    cholesterol_lines = []
+    glucose_lines = []
+
+    # --- Plot Lab Measurements ---
+    for code, data in measurements_data.items():
+        if not data:
+            continue
+
+        dates = sorted(data.keys())
+        values = [sum(entry["value"] for entry in data[date]) / len(data[date]) for date in dates]
+        dates_numeric = np.array([date.timestamp() for date in dates])
+        values = np.array(values)
+        color = color_map[code]
+
+        # Determine which axis and marker to use based on measurement type
+        is_cholesterol = "CHOLEST" in code.upper()
+        ax = ax1 if is_cholesterol else ax2
+        marker = '^' if is_cholesterol else 'o'
+        line_collection = cholesterol_lines if is_cholesterol else glucose_lines
+
+        if len(dates) > 2 and smooth:
+            spline = make_interp_spline(dates_numeric, values, k=2)
+            smooth_dates_numeric = np.linspace(dates_numeric.min(), dates_numeric.max(), 300)
+            smooth_values = spline(smooth_dates_numeric)
+            smooth_dates = [datetime.fromtimestamp(d) for d in smooth_dates_numeric]
+            line, = ax.plot(smooth_dates, smooth_values, linestyle='-', color=color)
+        else:
+            line, = ax.plot(dates, values, linestyle='-', color=color)
+
+        scatter = ax.scatter(dates, values, color=color, marker=marker, s=100, zorder=3, label=code)
+        line_collection.append((line, scatter))
+        measurement_labels_plotted = True
+
+        if show_units:
+            units = [data[date][0]["unit"] for date in dates]
+            for i, txt in enumerate(units):
+                ax.annotate(txt, (dates[i], values[i]), textcoords="offset points", xytext=(0, 5), ha='center')
+
+    # --- Plot Medications ---
+    med_records = []
+    for code in list(medication.keys()):
+        records = medication[code]
+        for med in records:
+            if med["date"]:
+                med_records.append(med | {"code": code})
+
+    med_for_legend = {}
+    for med in med_records:
+        date = med["date"]
+        name = med["name"]
+        code = med["code"]
+        color = color_map[code]
+
+        ax1.axvline(date, linestyle='--', color=color)
+        med_for_legend[name] = color
+
+    # --- Legends ---
+    bold_font = FontProperties(weight='bold')
+
+    # Wrap medication names
+    wrapped_med_names = {wrap_text(name): color for name, color in med_for_legend.items()}
+
+    # Create reference values legend if they are provided
+    if cholest_ref_values:
+        ref_legend_elements = [
+            plt.Rectangle((0, 0), 1, 1, facecolor='midnightblue', alpha=0.02,
+                          label=wrap_text('Normal')),
+            plt.Rectangle((0, 0), 1, 1, facecolor='orange', alpha=0.2, 
+                        label=wrap_text('Borderline high')),
+            plt.Rectangle((0, 0), 1, 1, facecolor='red', alpha=0.2, 
+                        label=wrap_text('High'))
+        ]
+        ref_legend = ax1.legend(handles=ref_legend_elements, 
+                              title=wrap_text("Reference cholesterol values"),
+                              bbox_to_anchor=(1.1, 0.5), loc="center left",
+                              title_fontproperties=bold_font, ncol=1)
+        ax1.add_artist(ref_legend)
+
+    # Create combined legend for measurements
+    if measurement_labels_plotted:
+        legend_elements = []
+        
+        # Add cholesterol measurements to legend
+        for _, scatter in cholesterol_lines:
+            legend_elements.append(plt.Line2D([0], [0], marker='^', color='none',
+                                            markerfacecolor=scatter.get_facecolor()[0],
+                                            markeredgecolor=scatter.get_edgecolor()[0],
+                                            markersize=10, label=scatter.get_label()))
+
+        # Add glucose measurements to legend
+        for _, scatter in glucose_lines:
+            legend_elements.append(plt.Line2D([0], [0], marker='o', color='none',
+                                            markerfacecolor=scatter.get_facecolor()[0],
+                                            markeredgecolor=scatter.get_edgecolor()[0],
+                                            markersize=10, label=scatter.get_label()))
+
+        measurement_legend = ax1.legend(handles=legend_elements, title="Measurements",
+                                      bbox_to_anchor=(1.1, 1), loc="upper left",
+                                      title_fontproperties=bold_font, ncol=1)
+        if med_for_legend:
+            ax1.add_artist(measurement_legend)
+
+    # Add medication legend if any medication data exists
+    if med_for_legend:
+        med_handles = [plt.Line2D([0], [0], color=color, linestyle='--', label=name)
+                      for name, color in wrapped_med_names.items()]
+        med_legend = ax1.legend(handles=med_handles, title="Medications",
+                               bbox_to_anchor=(1.1, 0), loc="lower left",
+                               title_fontproperties=bold_font, ncol=1)
+
+    # --- Final Touches ---
+    ax1.set_xlabel("Date")
+    ax1.set_ylabel("Cholesterol Measurement Value (mg/dL)", color='black')
+    ax2.set_ylabel("Glucose Measurement Value (mg/dL)", color='black')
+
+    # Get all dates and values to determine axis limits
+    all_dates = []
+    cholesterol_values = []
+    glucose_values = []
+
+    # Collect cholesterol data points
+    for line, scatter in cholesterol_lines:
+        offsets = scatter.get_offsets()
+        if len(offsets) > 0:
+            dates = mdates.num2date(offsets[:, 0])
+            all_dates.extend(normalize_datetime(d) for d in dates)
+            cholesterol_values.extend(offsets[:, 1])
+
+    # Collect glucose data points
+    for line, scatter in glucose_lines:
+        offsets = scatter.get_offsets()
+        if len(offsets) > 0:
+            dates = mdates.num2date(offsets[:, 0])
+            all_dates.extend(normalize_datetime(d) for d in dates)
+            glucose_values.extend(offsets[:, 1])
+
+    # Collect medication dates
+    for med in med_records:
+        if med["date"]:
+            all_dates.append(normalize_datetime(med["date"]))
+
+    # Adjust axes limits if there is data
+    if all_dates:
+        # Add padding to date range (8 days on each side)
+        date_range = timedelta(days=8)
+        xmin = min(all_dates) - date_range
+        xmax = max(all_dates) + date_range
+        ax1.set_xlim(xmin, xmax)
+
+    # Adjust y-axes if there are measurements
+    if cholesterol_values:
+        ymin = min(cholesterol_values) * 0.9
+        ymax = max(cholesterol_values) * 1.1
+        ax1.set_ylim(ymin, ymax)
+    else:
+        ax1.set_ylim(0, 300)
+    
+    if glucose_values:
+        ymin = min(glucose_values) * 0.9
+        ymax = max(glucose_values) * 1.1
+        ax2.set_ylim(min([-1, ymin]), ymax)
+
+    # Annotate medications
+    used_annotations = set()
+    for med in med_records:
+        date = med["date"]
+        name = med["name"]
+        if (date, name) not in used_annotations:
+            ax1.annotate(name, xy=(date, ax1.get_ylim()[0]), xytext=(0, 10),
+                         textcoords="offset points", ha='center', va='bottom',
+                         fontsize=8, rotation=90, color='black',
+                         bbox=dict(boxstyle="round,pad=0.3", fc="white", ec=color_map[med["code"]], lw=0.8))
+            used_annotations.add((date, name))
+
+    ax1.tick_params(axis='x', rotation=30)
+    ax1.set_title("Cholesterol and Glucose Measurements Over Time", weight='bold')
+    ax1.grid(True)
+    plt.tight_layout()
+    return fig
+
+def generate_plot_uri(measurements, medications, cholest_ref_values=None, smooth=False, show_units=False):
+    """
+    Generates a plot URI (base64 encoded image) for the given measurements and medications data.
+
+    This function checks whether there is any data to plot for the given measurements and medications.
+    If there is data, it generates a plot using matplotlib, encodes the plot into a base64 string,
+    and returns the base64-encoded image URI. If there is no data to plot, it returns None and
+    a flag indicating that no data was found.
+
+    :param measurements: Dictionary containing measurement data with codes as keys and lists as values.
+    :param medications: Dictionary containing medication data with codes as keys and lists as values.
+    :param cholest_ref_values: Dictionary with dates as keys and [lower, upper] bounds as values.
+    :param smooth: Bool, if True, smoothens the data with splines before plotting.
+    :param show_units: Bool, if True, displays units above each measurement point.
+    :return: A tuple containing:
+        - image_uri (str): The base64 encoded image URI of the plot or None if no data to plot.
+    """
+
+    # Check if there is any data in the measurements or medications
+    if not any(measurements[code] for code in measurements) and not any(medications[code] for code in medications):
+        # If both measurements and medications have no data, set the flag to True and image_uri to None
+        image_uri = None  # No plot to display
+    else:
+        # Create a buffer to hold the plot image
+        buf = io.BytesIO()
+
+        # Generate the plot using the plot_measurements function (imported from tools.py)
+        plot_measurements(measurements, medications, cholest_ref_values, smooth, show_units)
+
+        # Save the plot to the buffer in PNG format
+        plt.savefig(buf, format='png', bbox_inches='tight')
+
+        # Close the plot to free up resources
+        plt.close()
+
+        # Encode the plot in base64 format to be used in HTML
+        buf.seek(0)  # Move to the start of the buffer
+        image_base64 = base64.b64encode(buf.read()).decode('utf-8')  # Encode as base64 string
+        image_uri = f"data:image/png;base64,{image_base64}"  # Construct the data URI for embedding
+
+    # Return the image URI and the flag indicating if there is data to plot
+    return image_uri

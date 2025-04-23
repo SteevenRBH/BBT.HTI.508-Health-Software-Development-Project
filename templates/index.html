@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>LipoTrack</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <h1>LipoTrack</h1>
+    <h2>Statin medication follow-up software</h2>
+
+    <div class="container">
+        <div class="left-panel">
+
+            <div class="section">
+                <h3>Patient Information</h3>
+                <form id="patient-form">
+                    <label for="patient_id">Enter a patient ID:</label>
+                    <input type="text" id="patient_id" name="patient_id" required value="{{ patient_id or '' }}">
+                    <button type="submit">Fetch Data</button>
+                    <button id="go-to-table-format" type="button" onclick="goToTableFormat()" 
+                        {% if not patient_id or patient_not_found %}disabled{% endif %}>Go to Table Format</button>
+                </form>
+                {% if patient_not_found %}
+                    <p class="error-message">The patient ID {{ patient_id }} is not found in the database</p>
+                {% endif %}
+            </div>
+
+            <div class="section">
+                <h3>Diagnoses</h3>
+                {% if patient_id and not patient_not_found %}
+                    <div class="table-container">
+                        <table class="medications-table diagnoses-table">
+                            <thead>
+                                <tr>
+                                    <th>Metabolic disorder</th>
+                                    <th>Given diagnosis</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Hyperlipidemia</td>
+                                    <td>{% if "not diagnosed" in hyperlipidemia_msg %}None{% else %}{{ hyperlipidemia_msg.split("on ")[1] }}{% endif %}</td>
+                                </tr>
+                                <tr>
+                                    <td>Diabetes</td>
+                                    <td>{% if "not diagnosed" in diabetes_msg %}None{% else %}{{ diabetes_msg.split("on ")[1] }}{% endif %}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="section">
+                <h3>Medication Orders</h3>
+                {% if patient_id and not patient_not_found %}
+                    <div class="table-container">
+                        <table class="medications-table">
+                            <thead>
+                                <tr>
+                                    <th>Ordered on</th>
+                                    <th>Medication</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for patient_meds in medications.values() %}
+                                    {% if patient_meds %}
+                                        <tr>
+                                            <td>{{ patient_meds[0]['date'].strftime('%B %d, %Y') }}</td>
+                                            <td>{{ patient_meds[0]['name'] }}</td>
+                                        </tr>
+                                    {% endif %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="section">
+                <h3>Plot options</h3>
+                <div class="plot-options">
+                    <div class="option-container">
+                        <label class="switch">
+                            <input type="checkbox" id="show_ref_vals" name="show_ref_vals" {% if show_ref_vals %}checked{% endif %}>
+                            <span class="slider round"></span>
+                        </label>
+                        <label for="show_ref_vals" class="switch-label">Plot reference cholesterol levels</label>
+                    </div>
+                    <div class="option-container">
+                        <label class="switch">
+                            <input type="checkbox" id="smooth_curves" name="smooth_curves" {% if smooth_curves %}checked{% endif %}>
+                            <span class="slider round"></span>
+                        </label>
+                        <label for="smooth_curves" class="switch-label">Smooth curves</label>
+                    </div>
+                    <div class="option-container">
+                        <label class="switch">
+                            <input type="checkbox" id="show_units" name="show_units" {% if show_units %}checked{% endif %}>
+                            <span class="slider round"></span>
+                        </label>
+                        <label for="show_units" class="switch-label">Show units</label>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="right-panel">
+            {% if image_uri %}
+                <img src="{{ image_uri }}" alt="plot" style="align-self: flex-start;">
+            {% else %}
+                <p>No data to plot</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        // Handle form submission
+        document.getElementById("patient-form").addEventListener("submit", function (e) {
+            e.preventDefault(); // Prevent default form submission
+            var patientId = document.getElementById("patient_id").value;
+            var showRefVals = document.getElementById("show_ref_vals").checked;
+            var smoothCurves = document.getElementById("smooth_curves").checked;
+            var showUnits = document.getElementById("show_units").checked;
+            if (patientId) {
+                window.location.href = `/overview/?patient_id=${patientId}&show_ref_vals=${showRefVals}&smooth_curves=${smoothCurves}&show_units=${showUnits}`;
+            }
+        });
+
+        // Handle checkbox changes
+        document.getElementById("show_ref_vals").addEventListener("change", function (e) {
+            updatePlot();
+        });
+        document.getElementById("smooth_curves").addEventListener("change", function (e) {
+            updatePlot();
+        });
+        document.getElementById("show_units").addEventListener("change", function (e) {
+            updatePlot();
+        });
+
+        // Handle details button click
+        document.getElementById("details-button").addEventListener("click", function (e) {
+            var patientId = document.getElementById("patient_id").value;
+            if (patientId) {
+                window.location.href = `/details/?patient_id=${patientId}`;
+            }
+        });
+
+
+        function updatePlot() {
+            var patientId = document.getElementById("patient_id").value;
+            var showRefVals = document.getElementById("show_ref_vals").checked;
+            var smoothCurves = document.getElementById("smooth_curves").checked;
+            var showUnits = document.getElementById("show_units").checked;
+            if (patientId) {
+                window.location.href = `/overview/?patient_id=${patientId}&show_ref_vals=${showRefVals}&smooth_curves=${smoothCurves}&show_units=${showUnits}`;
+            }
+        }
+
+        // Redirect to the Table Format page
+        function goToTableFormat() {
+            var patientId = document.getElementById("patient_id").value;
+            if (patientId) {
+                window.location.href = `/details/?patient_id=${patientId}`;
+            }
+        }
+
+    </script>
+</body>
+</html>
