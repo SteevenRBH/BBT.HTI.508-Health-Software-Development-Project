@@ -12,18 +12,47 @@
         <div class="left-panel">
 
             <div class="section">
-                <h3>Patient Information</h3>
-                <form id="patient-form">
-                    <label for="patient_id">Enter a patient ID:</label>
-                    <input type="text" id="patient_id" name="patient_id" required value="{{ patient_id or '' }}">
-                    <button type="submit">Fetch Data</button>
-                    <button id="go-to-table-format" type="button" onclick="goToTableFormat()" 
-                        {% if not patient_id or patient_not_found %}disabled{% endif %}>Go to Table Format</button>
-                </form>
-                {% if patient_not_found %}
-                    <p class="error-message">The patient ID {{ patient_id }} is not found in the database</p>
-                {% endif %}
-            </div>
+    <h3>Patient Information</h3>
+    <form id="patient-form">
+        <label for="patient_id">Enter a patient ID:</label>
+        <input type="text" id="patient_id" name="patient_id" required value="{{ patient_id or '' }}">
+        <button type="submit">Fetch Data</button>
+        <button id="go-to-table-format" type="button" onclick="goToTableFormat()" 
+            {% if not patient_id or patient_not_found %}disabled{% endif %}>Go to Table Format</button>
+    </form>
+    {% if patient_not_found %}
+        <p class="error-message">The patient ID {{ patient_id }} is not found in the database</p>
+    {% endif %}
+
+    {% if patient_info %}
+        <div class="table-container">
+            <table class="medications-table patient-info-table">
+                <tbody>
+                    <tr>
+                        <th>Name</th>
+                        <td>{{ patient_info.name }}</td>
+                    </tr>
+                    <tr>
+                        <th>Gender</th>
+                        <td>{{ patient_info.gender }}</td>
+                    </tr>
+                    <tr>
+                        <th>Birth Date</th>
+                        <td>{{ patient_info.birth_date|datetime }}</td>
+                    </tr>
+                    {% if patient_info.contact %}
+                        {% for contact in patient_info.contact %}
+                            <tr>
+                                <th>{{ contact.system|title }}</th>
+                                <td>{{ contact.value }}</td>
+                            </tr>
+                        {% endfor %}
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    {% endif %}
+</div>
 
             <div class="section">
                 <h3>Diagnoses</h3>

@@ -74,6 +74,9 @@ def overview():
                                show_units=show_units,
                                medications ={})
 
+    # Get patient information
+    patient_info = get_patient_info(fhir_data, patient_id)
+
     # Get diagnosis information
     has_hyperlipidemia, hyperlipidemia_date = has_disorder(fhir_data, patient_id, "hyperlipidemia")
     has_diabetes, diabetes_date = has_disorder(fhir_data, patient_id, "diabetes")
@@ -122,6 +125,7 @@ def overview():
     # Render the overview page with all parameters
     return render_template("index.html",
                        patient_id=patient_id,
+                       patient_info=patient_info,
                        image_uri=image_uri,
                        patient_not_found=False,
                        show_ref_vals=show_ref_vals,

@@ -327,3 +327,18 @@ button:disabled {
 .date-range label {
     white-space: nowrap;
 }
+
+.patient-info-table {
+    margin-top: 20px;
+}
+
+.patient-info-table th {
+    width: 120px;
+    text-align: left;
+    padding: 8px 12px;
+    background-color: #f8f9fa;
+}
+
+.patient-info-table td {
+    padding: 8px 12px;
+}

@@ -95,7 +95,7 @@ def get_patient_info(fhir_data, patient_id):
                     try:
                         patient_info["contact"] = resource["telecom"]
                     except KeyError:
-                        patient_info["contact"] = "No contact information available"
+                        patient_info["contact"] = None
     return patient_info
 
 
