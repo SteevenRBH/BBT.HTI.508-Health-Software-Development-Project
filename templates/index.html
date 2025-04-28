@@ -119,7 +119,7 @@
             <input type="date" id="end_date" name="end_date" value="{{ end_date or '' }}">
         </div>
 
-        <button type="submit">Update Plot</button>
+        <button type="button" onclick="resetPlot()" class="reset-button">Reset Plot</button>
     </form>
 </div>
             </div>
@@ -136,56 +136,69 @@
     </div>
 
     <script>
-        // Handle form submission
-        document.getElementById("patient-form").addEventListener("submit", function (e) {
-            e.preventDefault(); // Prevent default form submission
-            var patientId = document.getElementById("patient_id").value;
-            var showRefVals = document.getElementById("show_ref_vals").checked;
-            var smoothCurves = document.getElementById("smooth_curves").checked;
-            var showUnits = document.getElementById("show_units").checked;
-            if (patientId) {
-                window.location.href = `/overview/?patient_id=${patientId}&show_ref_vals=${showRefVals}&smooth_curves=${smoothCurves}&show_units=${showUnits}`;
-            }
-        });
-
-        // Handle checkbox changes
-        document.getElementById("show_ref_vals").addEventListener("change", function (e) {
-            updatePlot();
-        });
-        document.getElementById("smooth_curves").addEventListener("change", function (e) {
-            updatePlot();
-        });
-        document.getElementById("show_units").addEventListener("change", function (e) {
-            updatePlot();
-        });
-
-        // Handle details button click
-        document.getElementById("details-button").addEventListener("click", function (e) {
-            var patientId = document.getElementById("patient_id").value;
-            if (patientId) {
-                window.location.href = `/details/?patient_id=${patientId}`;
-            }
-        });
-
-
-        function updatePlot() {
-            var patientId = document.getElementById("patient_id").value;
-            var showRefVals = document.getElementById("show_ref_vals").checked;
-            var smoothCurves = document.getElementById("smooth_curves").checked;
-            var showUnits = document.getElementById("show_units").checked;
-            if (patientId) {
-                window.location.href = `/overview/?patient_id=${patientId}&show_ref_vals=${showRefVals}&smooth_curves=${smoothCurves}&show_units=${showUnits}`;
-            }
+    // Handle form submission for patient ID
+    document.getElementById("patient-form").addEventListener("submit", function (e) {
+        e.preventDefault();
+        var patientId = document.getElementById("patient_id").value;
+        if (patientId) {
+            updatePlotWithCurrentState();
         }
+    });
 
-        // Redirect to the Table Format page
-        function goToTableFormat() {
-            var patientId = document.getElementById("patient_id").value;
-            if (patientId) {
-                window.location.href = `/details/?patient_id=${patientId}`;
-            }
+    // Function to get current state of all controls
+    function getCurrentState() {
+        return {
+            patientId: document.getElementById("patient_id").value,
+            showRefVals: document.getElementById("show_ref_vals").checked,
+            smoothCurves: document.getElementById("smooth_curves").checked,
+            showUnits: document.getElementById("show_units").checked,
+            startDate: document.getElementById("start_date").value,
+            endDate: document.getElementById("end_date").value
+        };
+    }
+
+    // Function to update plot with current state
+    function updatePlotWithCurrentState() {
+        const state = getCurrentState();
+        const queryParams = new URLSearchParams({
+            patient_id: state.patientId,
+            show_ref_vals: state.showRefVals,
+            smooth_curves: state.smoothCurves,
+            show_units: state.showUnits,
+            start_date: state.startDate,
+            end_date: state.endDate
+        });
+        window.location.href = `/overview/?${queryParams.toString()}`;
+    }
+
+    // Function to reset plot to default values
+    function resetPlot() {
+        const patientId = document.getElementById("patient_id").value;
+        window.location.href = `/overview/?patient_id=${patientId}`;
+    }
+
+    // Handle changes for switches
+    const switches = ['show_ref_vals', 'smooth_curves', 'show_units'];
+    switches.forEach(switchId => {
+        document.getElementById(switchId).addEventListener("change", function(e) {
+            updatePlotWithCurrentState();
+        });
+    });
+
+    // Handle date picker changes
+    ['start_date', 'end_date'].forEach(dateId => {
+        document.getElementById(dateId).addEventListener("change", function(e) {
+            updatePlotWithCurrentState();
+        });
+    });
+
+    // Redirect to the Table Format page
+    function goToTableFormat() {
+        var patientId = document.getElementById("patient_id").value;
+        if (patientId) {
+            window.location.href = `/details/?patient_id=${patientId}`;
         }
-
-    </script>
+    }
+</script>
 </body>
 </html>
