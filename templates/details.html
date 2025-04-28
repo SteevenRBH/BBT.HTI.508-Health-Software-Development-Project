@@ -119,7 +119,7 @@
             </table>
         </div>
     {% else %}
-        <p>No medications found for this patient.</p>
+        <p>No statin prescriptions were found for this patient.</p>
     {% endif %}
 </div>
 
@@ -128,9 +128,9 @@
     <script>
         // Redirect to the overview page
         function goToOverview() {
-            var patientId = document.getElementById("patient_id").value;
+            const patientId = document.getElementById("patient_id").value;
             if (patientId) {
-                window.location.href = `/overview/?patient_id=${patientId}`;
+                window.location.href = `/overview/?patient_id=${patientId}&show_ref_vals=true&start_date=&end_date=`;
             }
         }
     </script>

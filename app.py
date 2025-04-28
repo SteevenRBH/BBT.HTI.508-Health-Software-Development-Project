@@ -66,9 +66,9 @@ def overview():
     patient_id = request.args.get('patient_id', type=int)
 
     # Get all toggle values from the request
-    show_ref_vals = request.args.get('show_ref_vals', 'true').lower() == 'true'
-    smooth_curves = request.args.get('smooth_curves', 'false').lower() == 'true'
-    show_units = request.args.get('show_units', 'false').lower() == 'true'
+    show_ref_vals = request.args.get('show_ref_vals', 'checked') in {'true', 'on'}
+    smooth_curves = request.args.get('smooth_curves', 'checked') in {'true', 'on'}
+    show_units = request.args.get('show_units', 'checked') in {'true', 'on'}
 
     # Get date limits from request
     start_date = request.args.get('start_date')
