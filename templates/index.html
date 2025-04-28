@@ -253,6 +253,38 @@
             window.location.href = `/details/?patient_id=${patientId}`;
         }
     }
+
+
+// Add event listener when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    // Get the date input elements
+    const startDateInput = document.getElementById('start_date');
+    const endDateInput = document.getElementById('end_date');
+
+    {% if patient_info %}
+    // Get patient's birth date from the server-side data
+    const birthDate = new Date('{{ patient_info.birth_date }}');
+    // Get tomorrow's date
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    // Set min and max attributes for both date inputs
+    startDateInput.min = birthDate.toISOString().split('T')[0];
+    startDateInput.max = tomorrow.toISOString().split('T')[0];
+
+    endDateInput.min = birthDate.toISOString().split('T')[0];
+    endDateInput.max = tomorrow.toISOString().split('T')[0];
+
+    // Add event listeners to ensure start date is not after end date
+    startDateInput.addEventListener('change', function() {
+        endDateInput.min = this.value;
+    });
+
+    endDateInput.addEventListener('change', function() {
+        startDateInput.max = this.value;
+    });
+    {% endif %}
+});
 </script>
 
 </body>
