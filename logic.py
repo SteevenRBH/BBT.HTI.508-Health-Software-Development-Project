@@ -286,38 +286,6 @@ def cholest_reference_values(fhir_data, patient_id):
 
 
 if __name__=="__main__":
-### ALL THE CODE BELOW IS FOR TESTING PURPOSES ONLY ###
-   # Importing the database
-   fhir_data = load_patient_data()
-
-   # Interesting patients
-   patient_ID = 736230 # 2113340 #736230 #1137192 #8888804 "8888802 #767980
-   # glucose = get_measurements(fhir_data, patient_ID, "Glucose")
-   # cholesterol = get_measurements(fhir_data, patient_ID, "Cholesterol")
-   # print(glucose)
-   # print(cholesterol)
-
-   get_patient_info(fhir_data, 77777015)
-
-
-   cholest_reference_values(fhir_data, patient_ID)
-
-
-#
-   hyperlip_patients = get_patients_with_disorder(fhir_data, "hyperlipidemia")
-   diabetes_patients = get_patients_with_disorder(fhir_data, "diabetes")
-   hyperlip_medication = get_medications(fhir_data, patient_ID, "hyperlipidemia")
-
-   # print(hyperlip_patients)
-   # print(diabetes_patients)
-   # print(hyperlip_medication)
-#
-#    for patient_ID in diabetes_patients:
-#
-#       glucose = get_measurements(fhir_data, patient_ID, GLUCOSE)
-   cholesterol = get_measurements(fhir_data, patient_ID, "CHOLESTEROL")
-   # print(cholesterol)
-#
-#        hyperlip_medication = get_medications(fhir_data, patient_ID, HYPERLIP_MED_CODES)
-#
-        # fig = plot_measurements(glucose | cholesterol, hyperlip_medication)
+    ### ALL THE CODE BELOW IS FOR TESTING PURPOSES ONLY ###
+    # Interesting patients
+    patient_ID = 736230 # 2113340 736230 1137192 8888804 8888802 767980 7777701

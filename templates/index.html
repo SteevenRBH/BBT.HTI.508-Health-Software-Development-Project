@@ -95,24 +95,28 @@
             <h3>Medication Orders</h3>
             {% if patient_id and not patient_not_found %}
                 <div class="table-container">
-                    <table class="medications-table">
-                        <thead>
-                            <tr>
-                                <th>Ordered on</th>
-                                <th>Medication</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for patient_meds in medications.values() %}
-                                {% if patient_meds %}
-                                    <tr>
-                                        <td>{{ patient_meds[0]['date'].strftime('%B %d, %Y') }}</td>
-                                        <td>{{ patient_meds[0]['name'] }}</td>
-                                    </tr>
-                                {% endif %}
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                    {% if medications and medications.values()|select|first %}
+                        <table class="medications-table">
+                            <thead>
+                                <tr>
+                                    <th>Ordered on</th>
+                                    <th>Medication</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for patient_meds in medications.values() %}
+                                    {% if patient_meds %}
+                                        <tr>
+                                            <td>{{ patient_meds[0]['date'].strftime('%B %d, %Y') }}</td>
+                                            <td>{{ patient_meds[0]['name'] }}</td>
+                                        </tr>
+                                    {% endif %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% else %}
+                        <p>No prescriptions to show</p>
+                    {% endif %}
                 </div>
             {% endif %}
         </div>
@@ -122,61 +126,59 @@
     <div class="right-panel">
         {% if image_uri %}
             <img src="{{ image_uri }}" alt="plot" style="align-self: flex-start;">
+            <div class="plot-options">
+                <h3>Plot Options</h3>
+                <form id="plot-options-form">
+                    <input type="hidden" name="patient_id" value="{{ patient_id }}">
+
+                    <div class="plot-options-container">
+                        <!-- Column 1: Switches -->
+                        <div class="switches-container">
+                            <div class="option-container">
+                                <label class="switch">
+                                    <input type="checkbox" id="show_ref_vals" name="show_ref_vals" {% if show_ref_vals %}checked{% endif %}>
+                                    <span class="slider round"></span>
+                                </label>
+                                <span class="switch-label">Show reference values</span>
+                            </div>
+                            <div class="option-container">
+                                <label class="switch">
+                                    <input type="checkbox" id="smooth_curves" name="smooth_curves" {% if smooth_curves %}checked{% endif %}>
+                                    <span class="slider round"></span>
+                                </label>
+                                <span class="switch-label">Smooth curves</span>
+                            </div>
+                            <div class="option-container">
+                                <label class="switch">
+                                    <input type="checkbox" id="show_units" name="show_units" {% if show_units %}checked{% endif %}>
+                                    <span class="slider round"></span>
+                                </label>
+                                <span class="switch-label">Show units</span>
+                            </div>
+                        </div>
+
+                        <!-- Column 2: Date Range -->
+                        <div class="option date-range">
+                            <div class="date-input-group">
+                                <label for="start_date">Start Date:</label>
+                                <input type="date" id="start_date" name="start_date" value="{{ start_date or '' }}">
+                            </div>
+                            <div class="date-input-group">
+                                <label for="end_date">End Date:</label>
+                                <input type="date" id="end_date" name="end_date" value="{{ end_date or '' }}">
+                            </div>
+                        </div>
+
+                        <!-- Column 3: Reset Button -->
+                        <div class="reset-button-container">
+                            <button class="reset-plot-btn" onclick="resetPlot()">Reset Plot</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
         {% else %}
-            <p>No measurement or medication data to plot</p>
+            <p>No measurements or medication data to plot</p>
         {% endif %}
-
-        <div class="plot-options">
-            <h3>Plot Options</h3>
-            <form id="plot-options-form">
-                <input type="hidden" name="patient_id" value="{{ patient_id }}">
-
-                <div class="plot-options-container">
-                    <!-- Column 1: Switches -->
-                    <div class="switches-container">
-                        <div class="option-container">
-                            <label class="switch">
-                                <input type="checkbox" id="show_ref_vals" name="show_ref_vals" {% if show_ref_vals %}checked{% endif %}>
-                                <span class="slider round"></span>
-                            </label>
-                            <span class="switch-label">Show reference values</span>
-                        </div>
-                        <div class="option-container">
-                            <label class="switch">
-                                <input type="checkbox" id="smooth_curves" name="smooth_curves" {% if smooth_curves %}checked{% endif %}>
-                                <span class="slider round"></span>
-                            </label>
-                            <span class="switch-label">Smooth curves</span>
-                        </div>
-                        <div class="option-container">
-                            <label class="switch">
-                                <input type="checkbox" id="show_units" name="show_units" {% if show_units %}checked{% endif %}>
-                                <span class="slider round"></span>
-                            </label>
-                            <span class="switch-label">Show units</span>
-                        </div>
-                    </div>
-
-                    <!-- Column 2: Date Range -->
-                    <div class="option date-range">
-                        <div class="date-input-group">
-                            <label for="start_date">Start Date:</label>
-                            <input type="date" id="start_date" name="start_date" value="{{ start_date or '' }}">
-                        </div>
-                        <div class="date-input-group">
-                            <label for="end_date">End Date:</label>
-                            <input type="date" id="end_date" name="end_date" value="{{ end_date or '' }}">
-                        </div>
-                    </div>
-
-                    <!-- Column 3: Reset Button -->
-                    <div class="reset-button-container">
-                        <button class="reset-plot-btn" onclick="resetPlot()">Reset Plot</button>
-                    </div>
-                </div>
-            </form>
-        </div>
-
     </div>
 
 </div>
@@ -187,23 +189,11 @@
         e.preventDefault();
         const patientId = document.getElementById("patient_id").value;
         if (patientId) {
-            resetPlot();
+            window.location.href = `/overview/?patient_id=${patientId}&show_ref_vals=true`;
         }
     });
 
-    // Function to get current state of all controls
-    function getCurrentState() {
-        return {
-            patientId: document.getElementById("patient_id").value,
-            showRefVals: document.getElementById("show_ref_vals").checked,
-            smoothCurves: document.getElementById("smooth_curves").checked,
-            showUnits: document.getElementById("show_units").checked,
-            startDate: document.getElementById("start_date").value,
-            endDate: document.getElementById("end_date").value
-        };
-    }
-
-    // Function to update plot with current state
+    // Function to update plot with the current state
     function updatePlotWithCurrentState() {
         const state = getCurrentState();
         const queryParams = new URLSearchParams({
@@ -232,19 +222,28 @@
         updatePlotWithCurrentState();
     }
 
+    // Function to get the current state of all controls
+    function getCurrentState() {
+        return {
+            patientId: document.getElementById("patient_id").value,
+            showRefVals: document.getElementById("show_ref_vals").checked,
+            smoothCurves: document.getElementById("smooth_curves").checked,
+            showUnits: document.getElementById("show_units").checked,
+            startDate: document.getElementById("start_date").value,
+            endDate: document.getElementById("end_date").value
+        };
+    }
+
     // Handle changes for switches
     const switches = ['show_ref_vals', 'smooth_curves', 'show_units'];
     switches.forEach(switchId => {
-        document.getElementById(switchId).addEventListener("change", function(e) {
-            updatePlotWithCurrentState();
-        });
+        document.getElementById(switchId).addEventListener("change", updatePlotWithCurrentState);
     });
 
     // Handle date picker changes
-    ['start_date', 'end_date'].forEach(dateId => {
-        document.getElementById(dateId).addEventListener("change", function(e) {
-            updatePlotWithCurrentState();
-        });
+    const datePickers = ['start_date', 'end_date'];
+    datePickers.forEach(dateId => {
+        document.getElementById(dateId).addEventListener("change", updatePlotWithCurrentState);
     });
 
     // Redirect to the Table Format page
@@ -255,5 +254,6 @@
         }
     }
 </script>
+
 </body>
 </html>
