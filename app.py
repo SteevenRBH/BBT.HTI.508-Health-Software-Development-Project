@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for
 from logic import *
-from tools import generate_plot_uri
+from tools import *
 from datetime import datetime
 
 
@@ -56,6 +56,10 @@ def overview():
     smooth_curves = request.args.get('smooth_curves', 'false').lower() == 'true'
     show_units = request.args.get('show_units', 'false').lower() == 'true'
 
+    # Get date limits from request
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+
     if patient_id is None:
         return redirect(url_for('index'))
 
@@ -91,23 +95,43 @@ def overview():
     measurements = glucose | cholesterol
     medications = get_medications(fhir_data, patient_id, "hyperlipidemia")
 
+    # Get data date limits for default values
+    min_date, max_date = get_data_date_limits(measurements, medications)
+
+    # If no dates provided in request but we have data, use the data limits
+    if not start_date and not end_date and min_date and max_date:
+        start_date = min_date.strftime('%Y-%m-%d')
+        end_date = max_date.strftime('%Y-%m-%d')
+
+    # Convert dates to datetime objects if both are provided
+    alt_date_limits = None
+    if start_date and end_date:
+        try:
+            start_dt = datetime.strptime(start_date, '%Y-%m-%d')
+            end_dt = datetime.strptime(end_date, '%Y-%m-%d')
+            alt_date_limits = [start_dt, end_dt]
+        except ValueError:
+            alt_date_limits = None
+
     # Generate reference cholesterol values only if show_ref_vals is True
     cholest_ref = cholest_reference_values(fhir_data, patient_id) if show_ref_vals else None
 
     # Generate plot URI and check if there is data
-    image_uri = generate_plot_uri(measurements, medications, cholest_ref, smooth_curves, show_units)
+    image_uri = generate_plot_uri(measurements, medications, cholest_ref, smooth_curves, show_units, alt_date_limits)
 
     # Render the overview page with all parameters
     return render_template("index.html",
-                           patient_id=patient_id,
-                           image_uri=image_uri,
-                           patient_not_found=False,
-                           show_ref_vals=show_ref_vals,
-                           smooth_curves=smooth_curves,
-                           show_units=show_units,
-                           hyperlipidemia_msg=hyperlipidemia_msg,
-                           diabetes_msg=diabetes_msg,
-                           medications = medications)
+                       patient_id=patient_id,
+                       image_uri=image_uri,
+                       patient_not_found=False,
+                       show_ref_vals=show_ref_vals,
+                       smooth_curves=smooth_curves,
+                       show_units=show_units,
+                       start_date=start_date,
+                       end_date=end_date,
+                       hyperlipidemia_msg=hyperlipidemia_msg,
+                       diabetes_msg=diabetes_msg,
+                       medications=medications)
 
 
 @app.route('/details/', methods=['GET'])

@@ -78,30 +78,50 @@
             </div>
 
             <div class="section">
-                <h3>Plot options</h3>
-                <div class="plot-options">
-                    <div class="option-container">
-                        <label class="switch">
-                            <input type="checkbox" id="show_ref_vals" name="show_ref_vals" {% if show_ref_vals %}checked{% endif %}>
-                            <span class="slider round"></span>
-                        </label>
-                        <label for="show_ref_vals" class="switch-label">Plot reference cholesterol levels</label>
-                    </div>
-                    <div class="option-container">
-                        <label class="switch">
-                            <input type="checkbox" id="smooth_curves" name="smooth_curves" {% if smooth_curves %}checked{% endif %}>
-                            <span class="slider round"></span>
-                        </label>
-                        <label for="smooth_curves" class="switch-label">Smooth curves</label>
-                    </div>
-                    <div class="option-container">
-                        <label class="switch">
-                            <input type="checkbox" id="show_units" name="show_units" {% if show_units %}checked{% endif %}>
-                            <span class="slider round"></span>
-                        </label>
-                        <label for="show_units" class="switch-label">Show units</label>
-                    </div>
-                </div>
+<div class="plot-options">
+    <h3>Plot Options</h3>
+    <form id="plot-options-form" method="get" action="{{ url_for('overview') }}">
+        <input type="hidden" name="patient_id" value="{{ patient_id }}">
+
+        <!-- Switch for reference values -->
+        <div class="option-container">
+            <label class="switch">
+                <input type="checkbox" id="show_ref_vals" name="show_ref_vals" {% if show_ref_vals %}checked{% endif %}>
+                <span class="slider round"></span>
+            </label>
+            <span class="switch-label">Show reference values</span>
+        </div>
+
+        <!-- Switch for smooth curves -->
+        <div class="option-container">
+            <label class="switch">
+                <input type="checkbox" id="smooth_curves" name="smooth_curves" {% if smooth_curves %}checked{% endif %}>
+                <span class="slider round"></span>
+            </label>
+            <span class="switch-label">Smooth curves</span>
+        </div>
+
+        <!-- Switch for show units -->
+        <div class="option-container">
+            <label class="switch">
+                <input type="checkbox" id="show_units" name="show_units" {% if show_units %}checked{% endif %}>
+                <span class="slider round"></span>
+            </label>
+            <span class="switch-label">Show units</span>
+        </div>
+
+        <!-- Date picker inputs -->
+        <div class="option date-range">
+            <label for="start_date">Start Date:</label>
+            <input type="date" id="start_date" name="start_date" value="{{ start_date or '' }}">
+
+            <label for="end_date">End Date:</label>
+            <input type="date" id="end_date" name="end_date" value="{{ end_date or '' }}">
+        </div>
+
+        <button type="submit">Update Plot</button>
+    </form>
+</div>
             </div>
 
         </div>

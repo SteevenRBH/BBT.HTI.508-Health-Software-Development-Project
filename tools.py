@@ -53,6 +53,32 @@ def normalize_datetime(dt):
         return dt.replace(tzinfo=timezone.utc)
     return dt
 
+
+def get_data_date_limits(measurements_data, medication_data):
+    """Get the minimum and maximum dates from all available data."""
+    all_dates = []
+
+    # Get dates from measurements
+    for data in measurements_data.values():
+        if data:
+            all_dates.extend(normalize_datetime(date) for date in data.keys())
+
+    # Get dates from medications
+    for med_list in medication_data.values():
+        for med in med_list:
+            if med["date"]:
+                all_dates.append(normalize_datetime(med["date"]))
+
+    if not all_dates:
+        return None, None
+
+    # Add padding to date range (8 days on each side)
+    date_range = timedelta(days=8)
+    min_date = min(all_dates) - date_range
+    max_date = max(all_dates) + date_range
+
+    return min_date, max_date
+
 def plot_measurements(measurements_data, medication, cholest_ref_values=None, smooth=False, show_units=False, alt_date_limits=None):
     """
     Plots time series data for lab measurements with dual Y-axes and superimposes vertical lines for medications.

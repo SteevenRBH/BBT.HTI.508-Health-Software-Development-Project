@@ -310,3 +310,20 @@ button:disabled {
 .medications-table tr:last-child td {
     border-bottom: 1px solid #dee2e6; /* Ensures bottom line is visible for the last row */
 }
+
+.date-range {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin: 1rem 0;
+}
+
+.date-range input[type="date"] {
+    padding: 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.date-range label {
+    white-space: nowrap;
+}
