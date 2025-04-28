@@ -26,6 +26,20 @@ def dict_has_non_empty_subdicts(value):
         return any(isinstance(v, dict) and len(v) > 0 for v in value.values())
     return False
 
+@app.template_filter('calculate_age')
+def calculate_age(birth_date_str):
+    """
+    Calculate age from birth date string.
+    """
+    if isinstance(birth_date_str, str):
+        birth_date = datetime.strptime(birth_date_str, '%Y-%m-%d')
+    else:
+        birth_date = birth_date_str
+
+    today = datetime.now()
+    age = today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
+    return age
+
 @app.route("/", methods=["GET"])
 def index():
     # Default values for the plot and no data flag
