@@ -53,7 +53,7 @@ def normalize_datetime(dt):
         return dt.replace(tzinfo=timezone.utc)
     return dt
 
-def plot_measurements(measurements_data, medication, cholest_ref_values=None, smooth=False, show_units=False):
+def plot_measurements(measurements_data, medication, cholest_ref_values=None, smooth=False, show_units=False, alt_date_limits=None):
     """
     Plots time series data for lab measurements with dual Y-axes and superimposes vertical lines for medications.
     Uses triangular markers for cholesterol and circular markers for glucose measurements.
@@ -64,6 +64,7 @@ def plot_measurements(measurements_data, medication, cholest_ref_values=None, sm
         cholest_ref_values (dict, optional): Dictionary with dates as keys and [lower, upper] bounds as values.
         smooth (bool): If True, smoothens the data with splines before plotting.
         show_units (bool): If True, display units above each measurement point.
+        alt_date_limits (list, optional): Two-element list specifying the x-axis date limits as [start_date, end_date].
     """
     # --- Setup ---
     fig, ax1 = plt.subplots(figsize=(10, 6))
@@ -82,7 +83,7 @@ def plot_measurements(measurements_data, medication, cholest_ref_values=None, sm
         upper_bounds = [cholest_ref_values[date][1] for date in dates]
         
         # Get y-axis limits to extend the shading
-        ymax = 1000  # Set a reasonable maximum for cholesterol values
+        ymax = 10000  # Set a reasonable maximum for cholesterol values
 
         # Normal cholesterol range (below lower bound)
         ax1.fill_between(dates, 0 * len(dates), lower_bounds,
@@ -172,7 +173,7 @@ def plot_measurements(measurements_data, medication, cholest_ref_values=None, sm
                         label=wrap_text('High'))
         ]
         ref_legend = ax1.legend(handles=ref_legend_elements, 
-                              title=wrap_text("Reference cholesterol values"),
+                              title=wrap_text("Reference values"),
                               bbox_to_anchor=(1.1, 0.5), loc="center left",
                               title_fontproperties=bold_font, ncol=1)
         ax1.add_artist(ref_legend)
@@ -240,26 +241,60 @@ def plot_measurements(measurements_data, medication, cholest_ref_values=None, sm
         if med["date"]:
             all_dates.append(normalize_datetime(med["date"]))
 
-    # Adjust axes limits if there is data
-    if all_dates:
-        # Add padding to date range (8 days on each side)
-        date_range = timedelta(days=8)
-        xmin = min(all_dates) - date_range
-        xmax = max(all_dates) + date_range
-        ax1.set_xlim(xmin, xmax)
-
-    # Adjust y-axes if there are measurements
-    if cholesterol_values:
-        ymin = min(cholesterol_values) * 0.9
-        ymax = max(cholesterol_values) * 1.1
-        ax1.set_ylim(ymin, ymax)
+    # --- Adjust x-axis limits based on `alt_date_limits` ---
+    if alt_date_limits and len(alt_date_limits) == 2:
+        ax1.set_xlim(alt_date_limits[0], alt_date_limits[1])
     else:
-        ax1.set_ylim(0, 300)
-    
+        # Default behavior remains unchanged if `alt_date_limits` is not provided
+        if all_dates:
+            # Add padding to date range (8 days on each side)
+            date_range = timedelta(days=8)
+            xmin = min(all_dates) - date_range
+            xmax = max(all_dates) + date_range
+            ax1.set_xlim(xmin, xmax)
+
+    # Adjust axes limits if there is data
+    if cholesterol_values:
+        chol_min = min(cholesterol_values)
+        chol_max = max(cholesterol_values)
+    else:
+        chol_min = 0
+        chol_max = 300
+
     if glucose_values:
-        ymin = min(glucose_values) * 0.9
-        ymax = max(glucose_values) * 1.1
-        ax2.set_ylim(min([-1, ymin]), ymax)
+        glucose_min = min(glucose_values)
+        glucose_max = max(glucose_values)
+    else:
+        glucose_min = 0
+        glucose_max = 200
+
+    if cholest_ref_values:
+        # Define mapping: cholesterol → glucose
+        m = (125 - 100) / (239 - 199)
+        b = 125 - m * 239
+
+        # Provisional cholesterol limits
+        ymin = chol_min * 0.9
+        ymax = chol_max * 1.1
+
+        # Compute corresponding glucose limits from provisional cholesterol limits
+        gluc_min_mapped = m * ymin + b
+        gluc_max_mapped = m * ymax + b
+
+        # Expand cholesterol limits if needed to fit glucose data
+        if glucose_min < gluc_min_mapped:
+            ymin = (glucose_min - b) / m
+        if glucose_max > gluc_max_mapped:
+            ymax = (glucose_max - b) / m
+
+        # Set final axis limits
+        ax1.set_ylim(ymin, ymax)
+        ax2.set_ylim(m * ymin + b, m * ymax + b)
+
+    else:
+        # Set independent limits based on data only
+        ax1.set_ylim(chol_min * 0.9, chol_max * 1.1)
+        ax2.set_ylim(glucose_min * 0.9, glucose_max * 1.1)
 
     # Annotate medications
     used_annotations = set()
@@ -279,7 +314,7 @@ def plot_measurements(measurements_data, medication, cholest_ref_values=None, sm
     plt.tight_layout()
     return fig
 
-def generate_plot_uri(measurements, medications, cholest_ref_values=None, smooth=False, show_units=False):
+def generate_plot_uri(measurements, medications, cholest_ref_values=None, smooth=False, show_units=False, alt_date_limits=None):
     """
     Generates a plot URI (base64 encoded image) for the given measurements and medications data.
 
@@ -293,8 +328,8 @@ def generate_plot_uri(measurements, medications, cholest_ref_values=None, smooth
     :param cholest_ref_values: Dictionary with dates as keys and [lower, upper] bounds as values.
     :param smooth: Bool, if True, smoothens the data with splines before plotting.
     :param show_units: Bool, if True, displays units above each measurement point.
-    :return: A tuple containing:
-        - image_uri (str): The base64 encoded image URI of the plot or None if no data to plot.
+    :param alt_date_limits: List of two datetime objects specifying the x-axis date limits.
+    :return: str: The base64 encoded image URI of the plot or None if no data to plot.
     """
 
     # Check if there is any data in the measurements or medications
@@ -306,7 +341,7 @@ def generate_plot_uri(measurements, medications, cholest_ref_values=None, smooth
         buf = io.BytesIO()
 
         # Generate the plot using the plot_measurements function (imported from tools.py)
-        plot_measurements(measurements, medications, cholest_ref_values, smooth, show_units)
+        plot_measurements(measurements, medications, cholest_ref_values, smooth, show_units, alt_date_limits)
 
         # Save the plot to the buffer in PNG format
         plt.savefig(buf, format='png', bbox_inches='tight')
