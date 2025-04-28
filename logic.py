@@ -69,6 +69,35 @@ def patient_exists(fhir_data, patient_id_to_check=None):
                     existing_patients.add(int(patient_id))
     return patient_id_to_check in existing_patients, existing_patients
 
+def get_patient_info(fhir_data, patient_id):
+    """
+    Extracts basic patient information from FHIR data.
+
+    Parameters:
+        fhir_data (list): List containing FHIR JSON database (list of patient resource lists).
+        patient_id (int): ID of the patient whose information to extract.
+
+    Returns:
+        dict or None: Dictionary containing patient's basic information including name,
+                     gender, birth date and contact info if patient exists, None otherwise.
+    """
+    patient_info = None
+    if patient_exists(fhir_data, patient_id):
+        patient_info = {}
+        for patient_resources in fhir_data:
+            for entry in patient_resources:
+                resource = entry["resource"]
+                if resource["resourceType"] == "Patient" and resource["id"] == f"{patient_id}":
+                    name_data = resource["name"][0]
+                    patient_info["name"] = " ".join(name_data["given"] + name_data["family"])
+                    patient_info["gender"] = resource["gender"].capitalize()
+                    patient_info["birth_date"] = resource["birthDate"]
+                    try:
+                        patient_info["contact"] = resource["telecom"]
+                    except KeyError:
+                        patient_info["contact"] = "No contact information available"
+    return patient_info
+
 
 def has_disorder(fhir_data, patient_id, disorder):
     """
@@ -268,6 +297,9 @@ if __name__=="__main__":
    # print(glucose)
    # print(cholesterol)
 
+   get_patient_info(fhir_data, 77777015)
+
+
    cholest_reference_values(fhir_data, patient_ID)
 
 
@@ -276,15 +308,15 @@ if __name__=="__main__":
    diabetes_patients = get_patients_with_disorder(fhir_data, "diabetes")
    hyperlip_medication = get_medications(fhir_data, patient_ID, "hyperlipidemia")
 
-   print(hyperlip_patients)
-   print(diabetes_patients)
-   print(hyperlip_medication)
+   # print(hyperlip_patients)
+   # print(diabetes_patients)
+   # print(hyperlip_medication)
 #
 #    for patient_ID in diabetes_patients:
 #
 #       glucose = get_measurements(fhir_data, patient_ID, GLUCOSE)
    cholesterol = get_measurements(fhir_data, patient_ID, "CHOLESTEROL")
-   print(cholesterol)
+   # print(cholesterol)
 #
 #        hyperlip_medication = get_medications(fhir_data, patient_ID, HYPERLIP_MED_CODES)
 #
