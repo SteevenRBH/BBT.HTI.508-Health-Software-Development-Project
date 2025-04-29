@@ -1,6 +1,6 @@
 /* Base styles */
 body {
-    font-family: Arial, sans-serif;
+    font-family: Segoe UI, sans-serif;
     margin: 40px;
 }
 
@@ -11,6 +11,8 @@ h1, h2, h3 {
 
 h2 {
     margin-bottom: 30px;
+    font-size: 20px;
+    color: #727272;
 }
 
 h3 {
@@ -18,6 +20,24 @@ h3 {
     font-size: 18px;
     font-weight: bold;
     color: #333;
+}
+
+/* Add styles for the header section */
+.header-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    margin-bottom: 10px;
+}
+
+.header-container img {
+    height: 50px;
+    width: auto;
+}
+
+.header-container h1 {
+    margin: 0;  /* Remove default margins from h1 */
 }
 
 /* Layout */
