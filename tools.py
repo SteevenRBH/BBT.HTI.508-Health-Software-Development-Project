@@ -281,15 +281,15 @@ def plot_measurements(measurements_data, medication, cholest_ref_values=None, sm
 
     # Adjust axes limits if there is data
     if cholesterol_values:
-        chol_min = min(cholesterol_values)
-        chol_max = max(cholesterol_values)
+        chol_min = min(cholesterol_values) * 0.9
+        chol_max = max(cholesterol_values) * 1.1
     else:
         chol_min = 0
         chol_max = 300
 
     if glucose_values:
-        glucose_min = min(glucose_values)
-        glucose_max = max(glucose_values)
+        glucose_min = min(glucose_values) * 0.9
+        glucose_max = max(glucose_values) * 1.1
     else:
         glucose_min = 0
         glucose_max = 200
@@ -300,8 +300,8 @@ def plot_measurements(measurements_data, medication, cholest_ref_values=None, sm
         b = 125 - m * 239
 
         # Provisional cholesterol limits
-        ymin = chol_min * 0.9
-        ymax = chol_max * 1.1
+        ymin = chol_min
+        ymax = chol_max
 
         # Compute corresponding glucose limits from provisional cholesterol limits
         gluc_min_mapped = m * ymin + b
@@ -319,8 +319,8 @@ def plot_measurements(measurements_data, medication, cholest_ref_values=None, sm
 
     else:
         # Set independent limits based on data only
-        ax1.set_ylim(chol_min * 0.9, chol_max * 1.1)
-        ax2.set_ylim(glucose_min * 0.9, glucose_max * 1.1)
+        ax1.set_ylim(chol_min, chol_max)
+        ax2.set_ylim(glucose_min, glucose_max)
 
     # Annotate medications
     used_annotations = set()

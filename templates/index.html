@@ -255,14 +255,14 @@
     }
 
 
-// Add event listener when DOM is loaded
+// Add an event listener when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
     // Get the date input elements
     const startDateInput = document.getElementById('start_date');
     const endDateInput = document.getElementById('end_date');
 
     {% if patient_info %}
-    // Get patient's birth date from the server-side data
+    // Get the patient's birthdate from the server-side data
     const birthDate = new Date('{{ patient_info.birth_date }}');
     // Get tomorrow's date
     const tomorrow = new Date();
@@ -275,7 +275,7 @@ document.addEventListener('DOMContentLoaded', function() {
     endDateInput.min = birthDate.toISOString().split('T')[0];
     endDateInput.max = tomorrow.toISOString().split('T')[0];
 
-    // Add event listeners to ensure start date is not after end date
+    // Add event listeners to ensure the start date is not after the end date
     startDateInput.addEventListener('change', function() {
         endDateInput.min = this.value;
     });
