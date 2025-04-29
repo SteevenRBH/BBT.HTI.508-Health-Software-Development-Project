@@ -5,62 +5,65 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 </head>
 <body>
-    <h1>LipoTrack</h1>
-    <h2>Statin medication follow-up software</h2>
 
-    <div class="details-container">
+<h1>LipoTrack</h1>
+<h2>Statin medication follow-up software</h2>
 
-        <div class="details-section">
-            <h3>Patient Information</h3>
-            <form id="patient-form">
-                <label for="patient_id">Enter a patient ID:</label>
-                <input type="text" id="patient_id" name="patient_id" required value="{{ patient_id or '' }}">
-                <button type="submit">Fetch Data</button>
-                <button id="back-to-overview" type="button" onclick="goToOverview()"
-                    {% if not patient_id %}disabled{% endif %}>Go to Overview</button>
-            </form>
-            {% if patient_not_found %}
-                <p class="error-message">The patient ID {{ patient_id }} is not found in the database</p>
-            {% endif %}
+<div class="details-container">
 
-            {% if patient_info %}
-                <div class="table-container">
-                    <table class="medications-table patient-info-table">
-                        <tbody>
+    <div class="details-section">
+        <h3>Patient Information</h3>
+        <form id="patient-form">
+            <label for="patient_id">Enter a patient ID:</label>
+            <input type="text" id="patient_id" name="patient_id" required value="{{ patient_id or '' }}">
+            <button type="submit">Fetch Data</button>
+            <button id="back-to-overview" type="button" onclick="goToOverview()"
+                {% if not patient_id %}disabled{% endif %}>Go to Overview</button>
+        </form>
+        {% if patient_not_found %}
+            <p class="error-message">The patient ID {{ patient_id }} is not found in the database</p>
+        {% endif %}
+
+        {% if patient_info %}
+            <div class="table-container">
+                <table class="medications-table patient-info-table">
+                    <tbody>
+                        <tr>
+                            <th>Name</th>
+                            <td colspan="2">{{ patient_info.name }}</td>
+                        </tr>
+                        <tr>
+                            <th>Gender</th>
+                            <td colspan="2">{{ patient_info.gender }}</td>
+                        </tr>
+                        <tr>
+                            <th>Birth Date</th>
+                            <td colspan="2">{{ patient_info.birth_date|datetime }} ({{ patient_info.birth_date|calculate_age }} years old)</td>
+                        </tr>
+                        {% if patient_info.contact %}
                             <tr>
-                                <th>Name</th>
-                                <td colspan="2">{{ patient_info.name }}</td>
+                                <th rowspan="{{ patient_info.contact|length }}">Contact Information</th>
+                                {% for contact in patient_info.contact %}
+                                    <td>{{ contact.system|title }} {% if contact.use %}({{ contact.use }}){% endif %}</td>
+                                    <td>{{ contact.value }}</td>
+                                    {% if not loop.last %}
+                                        </tr><tr>
+                                    {% endif %}
+                                {% endfor %}
                             </tr>
+                        {% else %}
                             <tr>
-                                <th>Gender</th>
-                                <td colspan="2">{{ patient_info.gender }}</td>
+                                <th>Contact Information</th>
+                                <td colspan="2">Not provided</td>
                             </tr>
-                            <tr>
-                                <th>Birth Date</th>
-                                <td colspan="2">{{ patient_info.birth_date|datetime }} ({{ patient_info.birth_date|calculate_age }} years old)</td>
-                            </tr>
-                            {% if patient_info.contact %}
-                                <tr>
-                                    <th rowspan="{{ patient_info.contact|length }}">Contact Information</th>
-                                    {% for contact in patient_info.contact %}
-                                        <td>{{ contact.system|title }} {% if contact.use %}({{ contact.use }}){% endif %}</td>
-                                        <td>{{ contact.value }}</td>
-                                        {% if not loop.last %}
-                                            </tr><tr>
-                                        {% endif %}
-                                    {% endfor %}
-                                </tr>
-                            {% else %}
-                                <tr>
-                                    <th>Contact Information</th>
-                                    <td colspan="2">Not provided</td>
-                                </tr>
-                            {% endif %}
-                        </tbody>
-                    </table>
-                </div>
-            {% endif %}
-        </div>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+    </div>
+
+    {% if patient_info and not patient_not_found %}
 
         <div class="details-section">
             <h3>Cholesterol Measurements</h3>
@@ -160,16 +163,19 @@
             </div>
         </div>
 
-    </div>
+    {% endif %}
 
-    <script>
-        // Redirect to the overview page
-        function goToOverview() {
-            const patientId = document.getElementById("patient_id").value;
-            if (patientId) {
-                window.location.href = `/overview/?patient_id=${patientId}&show_ref_vals=true&start_date=&end_date=`;
-            }
+</div>
+
+<script>
+    // Redirect to the overview page
+    function goToOverview() {
+        const patientId = document.getElementById("patient_id").value;
+        if (patientId) {
+            window.location.href = `/overview/?patient_id=${patientId}&show_ref_vals=true&start_date=&end_date=`;
         }
-    </script>
+    }
+</script>
+
 </body>
 </html>

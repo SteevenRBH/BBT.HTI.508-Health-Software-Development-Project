@@ -155,8 +155,9 @@ def overview():
 @app.route('/details/', methods=['GET'])
 def details():
     patient_id = request.args.get('patient_id', type=int)
+
     if not patient_id:
-        return render_template('details.html', patient_id=None, patient_not_found=True)
+        return render_template('details.html', patient_id=None, patient_not_found=False)
 
     patient_exists_flag, _ = patient_exists(fhir_data, patient_id)
 
