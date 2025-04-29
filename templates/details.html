@@ -22,106 +22,143 @@
             {% if patient_not_found %}
                 <p class="error-message">The patient ID {{ patient_id }} is not found in the database</p>
             {% endif %}
-        </div>
 
-
-        <div class="details-section">
-    <h3>Cholesterol Measurements</h3>
-    {% if cholesterol and cholesterol|dictsubcheck %}
-        <div class="table-container">
-            <table class="medications-table">
-                <thead>
-                    <tr>
-                        <th>Date</th>
-                        <th>Code</th>
-                        <th>Value</th>
-                        <th>Unit</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for code, measurements in cholesterol.items() %}
-                        {% for date, entries in measurements.items() %}
-                            {% for entry in entries %}
-                                <tr>
-                                    <td>{{ date.strftime('%B %d, %Y') }}</td>
-                                    <td>{{ code }}</td>
-                                    <td>{{ entry.value }}</td>
-                                    <td>{{ entry.unit }}</td>
-                                </tr>
-                            {% endfor %}
-                        {% endfor %}
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    {% else %}
-        <p>No cholesterol measurements found for this patient.</p>
-    {% endif %}
-</div>
-
-        <div class="details-section">
-    <h3>Glucose Measurements</h3>
-    {% if glucose and glucose|dictsubcheck %}
-        <div class="table-container">
-            <table class="medications-table">
-                <thead>
-                    <tr>
-                        <th>Date</th>
-                        <th>Code</th>
-                        <th>Value</th>
-                        <th>Unit</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for code, measurements in glucose.items() %}
-                        {% for date, entries in measurements.items() %}
-                            {% for entry in entries %}
-                                <tr>
-                                    <td>{{ date.strftime('%B %d, %Y') }}</td>
-                                    <td>{{ code }}</td>
-                                    <td>{{ entry.value }}</td>
-                                    <td>{{ entry.unit }}</td>
-                                </tr>
-                            {% endfor %}
-                        {% endfor %}
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    {% else %}
-        <p>No glucose measurements found for this patient.</p>
-    {% endif %}
-</div>
-
-<div class="details-section">
-    <h3>Medication Orders</h3>
-    {% if medications %}
-        <div class="table-container">
-            <table class="medications-table">
-                <thead>
-                    <tr>
-                        <th>Date</th>
-                        <th>Medication</th>
-                        <th>Dosage</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for med_list in medications.values() %}
-                        {% for med in med_list %}
+            {% if patient_info %}
+                <div class="table-container">
+                    <table class="medications-table patient-info-table">
+                        <tbody>
                             <tr>
-                                <td>{{ med.date|datetime }}</td>
-                                <td>{{ med.name }}</td>
-                                <td>{{ med.dosage }}</td>
+                                <th>Name</th>
+                                <td colspan="2">{{ patient_info.name }}</td>
                             </tr>
-                        {% endfor %}
-                    {% endfor %}
-                </tbody>
-            </table>
+                            <tr>
+                                <th>Gender</th>
+                                <td colspan="2">{{ patient_info.gender }}</td>
+                            </tr>
+                            <tr>
+                                <th>Birth Date</th>
+                                <td colspan="2">{{ patient_info.birth_date|datetime }} ({{ patient_info.birth_date|calculate_age }} years old)</td>
+                            </tr>
+                            {% if patient_info.contact %}
+                                <tr>
+                                    <th rowspan="{{ patient_info.contact|length }}">Contact Information</th>
+                                    {% for contact in patient_info.contact %}
+                                        <td>{{ contact.system|title }} {% if contact.use %}({{ contact.use }}){% endif %}</td>
+                                        <td>{{ contact.value }}</td>
+                                        {% if not loop.last %}
+                                            </tr><tr>
+                                        {% endif %}
+                                    {% endfor %}
+                                </tr>
+                            {% else %}
+                                <tr>
+                                    <th>Contact Information</th>
+                                    <td colspan="2">Not provided</td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endif %}
         </div>
-    {% else %}
-        <p>No statin prescriptions were found for this patient.</p>
-    {% endif %}
-</div>
+
+        <div class="details-section">
+            <h3>Cholesterol Measurements</h3>
+            <div class="table-container">
+                {% if cholesterol and cholesterol|dictsubcheck %}
+                    <table class="medications-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Code</th>
+                                <th>Value</th>
+                                <th>Unit</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for code, measurements in cholesterol.items() %}
+                                {% for date, entries in measurements.items() %}
+                                    {% for entry in entries %}
+                                        <tr>
+                                            <td>{{ date.strftime('%B %d, %Y') }}</td>
+                                            <td>{{ code }}</td>
+                                            <td>{{ entry.value }}</td>
+                                            <td>{{ entry.unit }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                {% endfor %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <p>No cholesterol measurements to show</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="details-section">
+            <h3>Glucose Measurements</h3>
+            <div class="table-container">
+                {% if glucose and glucose|dictsubcheck %}
+                    <table class="medications-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Code</th>
+                                <th>Value</th>
+                                <th>Unit</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for code, measurements in glucose.items() %}
+                                {% for date, entries in measurements.items() %}
+                                    {% for entry in entries %}
+                                        <tr>
+                                            <td>{{ date.strftime('%B %d, %Y') }}</td>
+                                            <td>{{ code }}</td>
+                                            <td>{{ entry.value }}</td>
+                                            <td>{{ entry.unit }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                {% endfor %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <p>No glucose measurements to show</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="details-section">
+            <h3>Medication Orders</h3>
+            <div class="table-container">
+                {% if medications and medications.values()|select|first %}
+                    <table class="medications-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Medication</th>
+                                <th>Dosage</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for med_list in medications.values() %}
+                                {% for med in med_list %}
+                                    <tr>
+                                        <td>{{ med.date|datetime }}</td>
+                                        <td>{{ med.name }}</td>
+                                        <td>{{ med.dosage }}</td>
+                                    </tr>
+                                {% endfor %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <p>No prescriptions to show</p>
+                {% endif %}
+            </div>
+        </div>
 
     </div>
 
