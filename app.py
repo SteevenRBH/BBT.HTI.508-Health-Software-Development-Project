@@ -163,14 +163,23 @@ def details():
     if not patient_exists_flag:
         return render_template('details.html', patient_id=patient_id, patient_not_found=True)
 
+    # Get patient information
+    patient_info = get_patient_info(fhir_data, patient_id)
+
     # Fetch cholesterol, glucose measurements and medications
     cholesterol = get_measurements(fhir_data, patient_id, "cholesterol")
     glucose = get_measurements(fhir_data, patient_id, "glucose")
     medications = get_medications(fhir_data, patient_id, "hyperlipidemia")
 
-    # Render the details page with cholesterol data
-    return render_template('details.html', patient_id=patient_id, cholesterol=cholesterol,
-                           glucose=glucose, medications=medications, patient_not_found=False)
+    # Render the details page with with all data
+    return render_template('details.html',
+                         patient_id=patient_id,
+                         patient_info=patient_info,
+                         cholesterol=cholesterol,
+                         glucose=glucose,
+                         medications=medications,
+                         patient_not_found=False)
+
 
 if __name__ == "__main__":
     from werkzeug.serving import run_simple
