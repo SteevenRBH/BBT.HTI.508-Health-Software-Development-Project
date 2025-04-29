@@ -191,12 +191,12 @@ def plot_measurements(measurements_data, medication, cholest_ref_values=None, sm
     # Create reference values legend if they are provided
     if cholest_ref_values:
         ref_legend_elements = [
-            plt.Rectangle((0, 0), 1, 1, facecolor='midnightblue', alpha=0.02,
-                          label=wrap_text('Normal')),
+            plt.Rectangle((0, 0), 1, 1, facecolor='red', alpha=0.2,
+                          label=wrap_text('High')),
             plt.Rectangle((0, 0), 1, 1, facecolor='orange', alpha=0.2, 
                         label=wrap_text('Borderline high')),
-            plt.Rectangle((0, 0), 1, 1, facecolor='red', alpha=0.2, 
-                        label=wrap_text('High'))
+            plt.Rectangle((0, 0), 1, 1, facecolor='midnightblue', alpha=0.02,
+                          label=wrap_text('Normal'))
         ]
         ref_legend = ax1.legend(handles=ref_legend_elements, 
                               title=wrap_text("Reference values"),
