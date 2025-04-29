@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-    <title>LipoTrack</title>
+    <title>LipoTrack - Overview</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 </head>
 <body>
@@ -65,61 +65,64 @@
             {% endif %}
         </div>
 
-        <div class="section">
-            <h3>Diagnoses</h3>
-            {% if patient_id and not patient_not_found %}
-                <div class="table-container">
-                    <table class="medications-table diagnoses-table">
-                        <thead>
-                            <tr>
-                                <th>Metabolic disorder</th>
-                                <th>Given diagnosis</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>Hyperlipidemia</td>
-                                <td>{% if "not diagnosed" in hyperlipidemia_msg %}None{% else %}{{ hyperlipidemia_msg.split("on ")[1] }}{% endif %}</td>
-                            </tr>
-                            <tr>
-                                <td>Diabetes</td>
-                                <td>{% if "not diagnosed" in diabetes_msg %}None{% else %}{{ diabetes_msg.split("on ")[1] }}{% endif %}</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            {% endif %}
-        </div>
+        {% if patient_id and not patient_not_found %}
 
-        <div class="section">
-            <h3>Medication Orders</h3>
-            {% if patient_id and not patient_not_found %}
-                <div class="table-container">
-                    {% if medications and medications.values()|select|first %}
-                        <table class="medications-table">
+            <div class="section">
+                <h3>Diagnoses</h3>
+                {% if patient_id and not patient_not_found %}
+                    <div class="table-container">
+                        <table class="medications-table diagnoses-table">
                             <thead>
                                 <tr>
-                                    <th>Ordered on</th>
-                                    <th>Medication</th>
+                                    <th>Metabolic disorder</th>
+                                    <th>Given diagnosis</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for patient_meds in medications.values() %}
-                                    {% if patient_meds %}
-                                        <tr>
-                                            <td>{{ patient_meds[0]['date'].strftime('%B %d, %Y') }}</td>
-                                            <td>{{ patient_meds[0]['name'] }}</td>
-                                        </tr>
-                                    {% endif %}
-                                {% endfor %}
+                                <tr>
+                                    <td>Hyperlipidemia</td>
+                                    <td>{% if "not diagnosed" in hyperlipidemia_msg %}None{% else %}{{ hyperlipidemia_msg.split("on ")[1] }}{% endif %}</td>
+                                </tr>
+                                <tr>
+                                    <td>Diabetes</td>
+                                    <td>{% if "not diagnosed" in diabetes_msg %}None{% else %}{{ diabetes_msg.split("on ")[1] }}{% endif %}</td>
+                                </tr>
                             </tbody>
                         </table>
-                    {% else %}
-                        <p>No prescriptions to show</p>
-                    {% endif %}
-                </div>
-            {% endif %}
-        </div>
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="section">
+                <h3>Medication Orders</h3>
+                {% if patient_id and not patient_not_found %}
+                    <div class="table-container">
+                        {% if medications and medications.values()|select|first %}
+                            <table class="medications-table">
+                                <thead>
+                                    <tr>
+                                        <th>Ordered on</th>
+                                        <th>Medication</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for patient_meds in medications.values() %}
+                                        {% if patient_meds %}
+                                            <tr>
+                                                <td>{{ patient_meds[0]['date'].strftime('%B %d, %Y') }}</td>
+                                                <td>{{ patient_meds[0]['name'] }}</td>
+                                            </tr>
+                                        {% endif %}
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        {% else %}
+                            <p>No prescriptions to show</p>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+        {% endif %}
 
     </div>
 
@@ -254,37 +257,36 @@
         }
     }
 
+    // Add an event listener when DOM is loaded
+    document.addEventListener('DOMContentLoaded', function() {
+        // Get the date input elements
+        const startDateInput = document.getElementById('start_date');
+        const endDateInput = document.getElementById('end_date');
 
-// Add an event listener when DOM is loaded
-document.addEventListener('DOMContentLoaded', function() {
-    // Get the date input elements
-    const startDateInput = document.getElementById('start_date');
-    const endDateInput = document.getElementById('end_date');
+        {% if patient_info %}
+            // Get the patient's birthdate from the server-side data
+            const birthDate = new Date('{{ patient_info.birth_date }}');
+            // Get tomorrow's date
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate());
 
-    {% if patient_info %}
-        // Get the patient's birthdate from the server-side data
-        const birthDate = new Date('{{ patient_info.birth_date }}');
-        // Get tomorrow's date
-        const tomorrow = new Date();
-        tomorrow.setDate(tomorrow.getDate());
+            // Set min and max attributes for both date inputs
+            startDateInput.min = birthDate.toISOString().split('T')[0];
+            startDateInput.max = tomorrow.toISOString().split('T')[0];
 
-        // Set min and max attributes for both date inputs
-        startDateInput.min = birthDate.toISOString().split('T')[0];
-        startDateInput.max = tomorrow.toISOString().split('T')[0];
+            endDateInput.min = birthDate.toISOString().split('T')[0];
+            endDateInput.max = tomorrow.toISOString().split('T')[0];
 
-        endDateInput.min = birthDate.toISOString().split('T')[0];
-        endDateInput.max = tomorrow.toISOString().split('T')[0];
+            // Add event listeners to ensure the start date is not after the end date
+            startDateInput.addEventListener('change', function() {
+                endDateInput.min = this.value;
+            });
 
-        // Add event listeners to ensure the start date is not after the end date
-        startDateInput.addEventListener('change', function() {
-            endDateInput.min = this.value;
-        });
-
-        endDateInput.addEventListener('change', function() {
-            startDateInput.max = this.value;
-        });
-    {% endif %}
-});
+            endDateInput.addEventListener('change', function() {
+                startDateInput.max = this.value;
+            });
+        {% endif %}
+    });
 </script>
 
 </body>
