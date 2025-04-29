@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for
+from werkzeug.serving import run_simple
 from logic import *
 from tools import *
 from datetime import datetime
@@ -183,5 +184,4 @@ def details():
 
 
 if __name__ == "__main__":
-    from werkzeug.serving import run_simple
     run_simple('localhost', 5000, app)

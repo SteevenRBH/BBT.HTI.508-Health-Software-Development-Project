@@ -16,7 +16,7 @@ h2 {
 }
 
 h3 {
-    margin: 20px 0;
+    margin: 0 0;
     font-size: 18px;
     font-weight: bold;
     color: #333;
@@ -389,10 +389,6 @@ input:checked + .slider:before {
     margin-bottom: 20px;
     display: inline-block;
     max-width: fit-content;
-}
-
-.details-section .table-container {
-    margin: 0;
 }
 
 /* Responsive design */
