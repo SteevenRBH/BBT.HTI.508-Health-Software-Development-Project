@@ -41,24 +41,39 @@ def calculate_age(birth_date_str):
     age = today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
     return age
 
-@app.route("/", methods=["GET"])
-def index():
-    # Default values for the plot and no data flag
-    patient_id = None
-    image_uri = None
-    show_ref_vals = True  # Set default to True
-    smooth_curves = False  # Set default to False
-    show_units = False  # Set default to False
-    medications = {}  # Initialize empty medications dictionary
 
-    # Render the index page with all parameters
-    return render_template("index.html",
-                           patient_id=patient_id,
-                           image_uri=image_uri,
-                           show_ref_vals=show_ref_vals,
-                           smooth_curves=smooth_curves,
-                           show_units=show_units,
-                           medications=medications)
+@app.route("/")
+def index():
+    return redirect(url_for('login'))
+
+@app.route("/login/", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        physician_id = request.form.get('physician_id')
+        password = request.form.get('password')
+        # This is a dummy login
+        if physician_id and password and physician_id == password:
+            # Default values for the plot and no data flag
+            patient_id = None
+            image_uri = None
+            show_ref_vals = True  # Set default to True
+            smooth_curves = False  # Set default to False
+            show_units = False  # Set default to False
+            medications = {}  # Initialize empty medications dictionary
+
+            # Render the overview page with all parameters
+            return render_template("overview.html",
+                                   patient_id=patient_id,
+                                   image_uri=image_uri,
+                                   show_ref_vals=show_ref_vals,
+                                   smooth_curves=smooth_curves,
+                                   show_units=show_units,
+                                   medications=medications)
+        else:
+            return render_template("login.html", error="Invalid credentials")
+
+    # GET request - show the login form
+    return render_template("login.html", error=None)
 
 
 @app.route("/overview/", methods=["GET", "POST"])
@@ -76,12 +91,19 @@ def overview():
     end_date = request.args.get('end_date')
 
     if patient_id is None:
-        return redirect(url_for('index'))
+        return render_template("overview.html",
+                               patient_id=None,
+                               image_uri=None,
+                               patient_not_found=False,
+                               show_ref_vals=True,
+                               smooth_curves=False,
+                               show_units=False,
+                               medications={})
 
     # Check if patient exists in database
     patient_id_exists, _ = patient_exists(fhir_data, patient_id)
     if not patient_id_exists:
-        return render_template("index.html",
+        return render_template("overview.html",
                                patient_id=patient_id,
                                patient_not_found=True,
                                show_ref_vals=show_ref_vals,
@@ -138,7 +160,7 @@ def overview():
     image_uri = generate_plot_uri(measurements, medications, cholest_ref, smooth_curves, show_units, alt_date_limits)
 
     # Render the overview page with all parameters
-    return render_template("index.html",
+    return render_template("overview.html",
                        patient_id=patient_id,
                        patient_info=patient_info,
                        image_uri=image_uri,

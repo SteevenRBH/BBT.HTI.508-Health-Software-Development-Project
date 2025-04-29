@@ -40,6 +40,71 @@ h3 {
     margin: 0;  /* Remove default margins from h1 */
 }
 
+
+/* Login form styles */
+.login-form {
+    max-width: 400px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.login-form div {
+    margin-bottom: 20px;
+}
+
+.login-form label {
+    display: block;
+    margin-bottom: 8px;
+    color: #333;
+    font-weight: 500;
+}
+
+.login-form input[type="text"],
+.login-form input[type="password"] {
+    width: 100%;
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+    transition: border-color 0.3s ease;
+}
+
+.login-form input[type="text"]:focus,
+.login-form input[type="password"]:focus {
+    border-color: #4CAF50;
+    outline: none;
+    box-shadow: 0 0 5px rgba(76, 175, 80, 0.2);
+}
+
+/* Login error message */
+.login-error {
+    text-align: center;
+    margin-bottom: 20px;
+    padding: 10px;
+    background-color: #ffebee;
+    border-radius: 4px;
+    border: 1px solid #ffcdd2;
+    color: #dc3545;
+}
+
+/* Logout button styles */
+.logout-section {
+    margin-top: auto !important;
+    text-align: center;
+}
+
+.logout-btn {
+    background-color: #dc3545;
+}
+
+.logout-btn:hover {
+    background-color: #c82333;
+}
+
 /* Layout */
 .container {
     display: flex;
