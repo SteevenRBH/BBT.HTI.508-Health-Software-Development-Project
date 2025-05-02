@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 from scipy.interpolate import make_interp_spline
 from matplotlib.font_manager import FontProperties
-import matplotlib.dates as mdates
+import matplotlib.dates as m_dates
 from datetime import timedelta, timezone
 
 
@@ -72,7 +72,7 @@ def get_data_date_limits(measurements_data, medication_data):
     if not all_dates:
         return None, None
 
-    # Add padding to date range (8 days on each side)
+    # Add padding to the date range (8 days on each side)
     date_range = timedelta(days=8)
     min_date = min(all_dates) - date_range
     max_date = max(all_dates) + date_range
@@ -94,11 +94,11 @@ def plot_measurements(measurements_data, medication, cholest_ref_values=None, sm
     """
     # --- Setup ---
     fig, ax1 = plt.subplots(figsize=(10, 6))
-    ax2 = ax1.twinx()  # Create second Y-axis
+    ax2 = ax1.twinx()  # Create a second Y-axis
     
     # Configure date formatting
-    locator = mdates.AutoDateLocator()
-    formatter = mdates.ConciseDateFormatter(locator)
+    locator = m_dates.AutoDateLocator()
+    formatter = m_dates.ConciseDateFormatter(locator)
     ax1.xaxis.set_major_locator(locator)
     ax1.xaxis.set_major_formatter(formatter)
     
@@ -109,7 +109,7 @@ def plot_measurements(measurements_data, medication, cholest_ref_values=None, sm
         upper_bounds = [cholest_ref_values[date][1] for date in dates]
         
         # Get y-axis limits to extend the shading
-        ymax = 10000  # Set a reasonable maximum for cholesterol values
+        y_max = 10000  # Set a reasonable maximum for cholesterol values
 
         # Normal cholesterol range (below lower bound)
         ax1.fill_between(dates, 0 * len(dates), lower_bounds,
@@ -119,8 +119,8 @@ def plot_measurements(measurements_data, medication, cholest_ref_values=None, sm
         ax1.fill_between(dates, lower_bounds, upper_bounds, 
                         alpha=0.2, color='orange')
         
-        # High cholesterol range (above upper bound)
-        ax1.fill_between(dates, upper_bounds, [ymax] * len(dates),
+        # High-cholesterol range (above upper bound)
+        ax1.fill_between(dates, upper_bounds, [y_max] * len(dates),
                         alpha=0.2, color='red')
     
     color_map = create_combined_colormap(measurements_data, medication)
@@ -140,7 +140,7 @@ def plot_measurements(measurements_data, medication, cholest_ref_values=None, sm
         values = np.array(values)
         color = color_map[code]
 
-        # Determine which axis and marker to use based on measurement type
+        # Determine which axis and marker to use based on a measurement type
         is_cholesterol = "CHOLEST" in code.upper()
         ax = ax1 if is_cholesterol else ax2
         marker = '^' if is_cholesterol else 'o'
@@ -250,7 +250,7 @@ def plot_measurements(measurements_data, medication, cholest_ref_values=None, sm
     for line, scatter in cholesterol_lines:
         offsets = scatter.get_offsets()
         if len(offsets) > 0:
-            dates = mdates.num2date(offsets[:, 0])
+            dates = m_dates.num2date(offsets[:, 0])
             all_dates.extend(normalize_datetime(d) for d in dates)
             cholesterol_values.extend(offsets[:, 1])
 
@@ -258,7 +258,7 @@ def plot_measurements(measurements_data, medication, cholest_ref_values=None, sm
     for line, scatter in glucose_lines:
         offsets = scatter.get_offsets()
         if len(offsets) > 0:
-            dates = mdates.num2date(offsets[:, 0])
+            dates = m_dates.num2date(offsets[:, 0])
             all_dates.extend(normalize_datetime(d) for d in dates)
             glucose_values.extend(offsets[:, 1])
 
@@ -271,13 +271,13 @@ def plot_measurements(measurements_data, medication, cholest_ref_values=None, sm
     if alt_date_limits and len(alt_date_limits) == 2:
         ax1.set_xlim(alt_date_limits[0], alt_date_limits[1])
     else:
-        # Default behavior remains unchanged if `alt_date_limits` is not provided
+        # The default behavior remains unchanged if `alt_date_limits` is not provided
         if all_dates:
-            # Add padding to date range (8 days on each side)
+            # Add padding to the date range (8 days on each side)
             date_range = timedelta(days=8)
-            xmin = min(all_dates) - date_range
-            xmax = max(all_dates) + date_range
-            ax1.set_xlim(xmin, xmax)
+            x_min = min(all_dates) - date_range
+            x_max = max(all_dates) + date_range
+            ax1.set_xlim(x_min, x_max)
 
     # Adjust axes limits if there is data
     if cholesterol_values:
@@ -300,22 +300,22 @@ def plot_measurements(measurements_data, medication, cholest_ref_values=None, sm
         b = 125 - m * 239
 
         # Provisional cholesterol limits
-        ymin = chol_min
-        ymax = chol_max
+        y_min = chol_min
+        y_max = chol_max
 
         # Compute corresponding glucose limits from provisional cholesterol limits
-        gluc_min_mapped = m * ymin + b
-        gluc_max_mapped = m * ymax + b
+        gluc_min_mapped = m * y_min + b
+        gluc_max_mapped = m * y_max + b
 
         # Expand cholesterol limits if needed to fit glucose data
         if glucose_min < gluc_min_mapped:
-            ymin = (glucose_min - b) / m
+            y_min = (glucose_min - b) / m
         if glucose_max > gluc_max_mapped:
-            ymax = (glucose_max - b) / m
+            y_max = (glucose_max - b) / m
 
         # Set final axis limits
-        ax1.set_ylim(ymin, ymax)
-        ax2.set_ylim(m * ymin + b, m * ymax + b)
+        ax1.set_ylim(y_min, y_max)
+        ax2.set_ylim(m * y_min + b, m * y_max + b)
 
     else:
         # Set independent limits based on data only
@@ -377,7 +377,7 @@ def generate_plot_uri(measurements, medications, cholest_ref_values=None, smooth
 
         # Encode the plot in base64 format to be used in HTML
         buf.seek(0)  # Move to the start of the buffer
-        image_base64 = base64.b64encode(buf.read()).decode('utf-8')  # Encode as base64 string
+        image_base64 = base64.b64encode(buf.read()).decode('utf-8')  # Encode as a base64 string
         image_uri = f"data:image/png;base64,{image_base64}"  # Construct the data URI for embedding
 
     # Return the image URI and the flag indicating if there is data to plot

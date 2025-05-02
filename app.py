@@ -12,12 +12,12 @@ fhir_data = load_patient_data()
 app = Flask(__name__)
 
 @app.template_filter('datetime')
-def format_datetime(value, format="%Y-%m-%d"):
+def format_datetime(value, desired_format="%Y-%m-%d"):
     if isinstance(value, str):
-        value = datetime.strptime(value, format)
+        value = datetime.strptime(value, desired_format)
     return value.strftime('%B %d, %Y')
 
-@app.template_filter('dictsubcheck')
+@app.template_filter('dict_check')
 def dict_has_non_empty_subdicts(value):
     """
     Custom Jinja2 filter to check if a dictionary has at least
@@ -30,7 +30,7 @@ def dict_has_non_empty_subdicts(value):
 @app.template_filter('calculate_age')
 def calculate_age(birth_date_str):
     """
-    Calculate age from birth date string.
+    Calculate age from a birthdate string.
     """
     if isinstance(birth_date_str, str):
         birth_date = datetime.strptime(birth_date_str, '%Y-%m-%d')
@@ -51,7 +51,7 @@ def login():
     if request.method == "POST":
         physician_id = request.form.get('physician_id')
         password = request.form.get('password')
-        # This is a dummy login
+        # This is a placeholder login
         if physician_id and password and physician_id == password:
             # Default values for the plot and no data flag
             patient_id = None
@@ -78,7 +78,7 @@ def login():
 
 @app.route("/overview/", methods=["GET", "POST"])
 def overview():
-    # Get patient_id from the GET request (query string)
+    # Get patient_id from the user input
     patient_id = request.args.get('patient_id', type=int)
 
     # Get all toggle values from the request
@@ -100,7 +100,7 @@ def overview():
                                show_units=False,
                                medications={})
 
-    # Check if patient exists in database
+    # Check if a patient exists in the database
     patient_id_exists, _ = patient_exists(fhir_data, patient_id)
     if not patient_id_exists:
         return render_template("overview.html",
@@ -138,7 +138,7 @@ def overview():
     # Get data date limits for default values
     min_date, max_date = get_data_date_limits(measurements, medications)
 
-    # If no dates provided in request but we have data, use the data limits
+    # If no dates provided in request, but we have data, use the data limits
     if not start_date and not end_date and min_date and max_date:
         start_date = min_date.strftime('%Y-%m-%d')
         end_date = max_date.strftime('%Y-%m-%d')
@@ -154,10 +154,10 @@ def overview():
             alt_date_limits = None
 
     # Generate reference cholesterol values only if show_ref_vals is True
-    cholest_ref = cholest_reference_values(fhir_data, patient_id) if show_ref_vals else None
+    cholesterol_ref = cholest_reference_values(fhir_data, patient_id) if show_ref_vals else None
 
     # Generate plot URI and check if there is data
-    image_uri = generate_plot_uri(measurements, medications, cholest_ref, smooth_curves, show_units, alt_date_limits)
+    image_uri = generate_plot_uri(measurements, medications, cholesterol_ref, smooth_curves, show_units, alt_date_limits)
 
     # Render the overview page with all parameters
     return render_template("overview.html",
@@ -195,7 +195,7 @@ def details():
     glucose = get_measurements(fhir_data, patient_id, "glucose")
     medications = get_medications(fhir_data, patient_id, "hyperlipidemia")
 
-    # Render the details page with with all data
+    # Render the details page with all data
     return render_template('details.html',
                          patient_id=patient_id,
                          patient_info=patient_info,

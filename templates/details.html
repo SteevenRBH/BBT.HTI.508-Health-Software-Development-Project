@@ -72,7 +72,7 @@
         <div class="details-section">
             <h3>Cholesterol Measurements</h3>
             <div class="table-container">
-                {% if cholesterol and cholesterol|dictsubcheck %}
+                {% if cholesterol and cholesterol|dict_check %}
                     <table class="medications-table">
                         <thead>
                             <tr>
@@ -106,7 +106,7 @@
         <div class="details-section">
             <h3>Glucose Measurements</h3>
             <div class="table-container">
-                {% if glucose and glucose|dictsubcheck %}
+                {% if glucose and glucose|dict_check %}
                     <table class="medications-table">
                         <thead>
                             <tr>

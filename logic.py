@@ -75,11 +75,11 @@ def get_patient_info(fhir_data, patient_id):
 
     Parameters:
         fhir_data (list): List containing FHIR JSON database (list of patient resource lists).
-        patient_id (int): ID of the patient whose information to extract.
+        patient_id (int): ID of the patient whose information is to extract.
 
     Returns:
         dict or None: Dictionary containing patient's basic information including name,
-                     gender, birth date and contact info if patient exists, None otherwise.
+                     gender, birthdate and contact info if the patient exists, None otherwise.
     """
     patient_info = None
     if patient_exists(fhir_data, patient_id):
@@ -233,7 +233,7 @@ def get_medications(fhir_data, patient_id, disorder):
 
 def cholest_reference_values(fhir_data, patient_id):
     """
-    Calculates reference values for cholesterol measurements based on patient's age at measurement dates.
+    Calculates reference values for cholesterol measurements based on the patient's age at measurement dates.
 
     Parameters:
         fhir_data (dict): The FHIR data dictionary containing patient and observation information
@@ -261,7 +261,7 @@ def cholest_reference_values(fhir_data, patient_id):
     # Get cholesterol measurements
     cholesterol_measurements = get_measurements(fhir_data, patient_id, "Cholesterol")
 
-    # Initialize measurement_dates as empty list
+    # Initialize measurement_dates as an empty list
     measurement_dates = []
 
     # Only process dates if there are actual measurements
